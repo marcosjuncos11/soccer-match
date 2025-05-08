@@ -31,3 +31,27 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Failed to fetch match" }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    // First, delete all signups for this match
+    await sql`
+      DELETE FROM "Signup" WHERE "matchId" = ${params.id}
+    `
+
+    // Then delete the match itself
+    const result = await sql`
+      DELETE FROM "Match" WHERE id = ${params.id}
+      RETURNING id
+    `
+
+    if (result.length === 0) {
+      return NextResponse.json({ error: "Match not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, message: "Match deleted successfully" })
+  } catch (error) {
+    console.error("Error deleting match:", error)
+    return NextResponse.json({ error: "Failed to delete match" }, { status: 500 })
+  }
+}
