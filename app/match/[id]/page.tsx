@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Player {
   id: string
@@ -190,7 +189,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🥩" : ""}`).join("\n")
+    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍗" : ""}`).join("\n")
   }
 
   const handleShare = () => {
@@ -450,70 +449,79 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
           <Separator className="bg-green-100" />
 
-          <Tabs defaultValue="player" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="player">Anotarme para Jugar</TabsTrigger>
-              <TabsTrigger value="meal">Anotarme Solo para Comer</TabsTrigger>
-            </TabsList>
-            <TabsContent value="player">
-              <form onSubmit={handleSignup} className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100">
-                <div className="space-y-2">
-                  <Label htmlFor="playerName" className="text-green-700">
-                    Tu Nombre
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="playerName"
-                      placeholder="Ingresa tu nombre para anotarte"
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      required
-                      className="border-green-200 focus-visible:ring-green-500"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isSigningUp || !playerName.trim()}
-                      className="bg-green-600 hover:bg-green-700 transition-all duration-300"
-                    >
-                      {isSigningUp ? "Anotando..." : "Anotarme"}
-                    </Button>
+          {/* Two separate signup sections */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Player signup section */}
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <h3 className="text-lg font-medium text-green-800 mb-4 flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-green-600" />
+                  Anotarme para Jugar
+                </h3>
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="playerName" className="text-green-700">
+                      Tu Nombre
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="playerName"
+                        placeholder="Ingresa tu nombre para jugar"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value)}
+                        required
+                        className="border-green-200 focus-visible:ring-green-500"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isSigningUp || !playerName.trim()}
+                        className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                      >
+                        {isSigningUp ? "Anotando..." : "Anotarme"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </form>
-            </TabsContent>
-            <TabsContent value="meal">
-              <form
-                onSubmit={handleMealOnlySignup}
-                className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="mealOnlyName" className="text-green-700">
-                    Tu Nombre (Solo para Comer)
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="mealOnlyName"
-                      placeholder="Ingresa tu nombre para anotarte solo para comer"
-                      value={mealOnlyName}
-                      onChange={(e) => setMealOnlyName(e.target.value)}
-                      required
-                      className="border-green-200 focus-visible:ring-green-500"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
-                      className="bg-green-600 hover:bg-green-700 transition-all duration-300"
-                    >
-                      {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
-                    </Button>
+                </form>
+              </div>
+            </div>
+
+            {/* Meal-only signup section */}
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                <h3 className="text-lg font-medium text-green-800 mb-4 flex items-center">
+                  <Utensils className="mr-2 h-5 w-5 text-green-600" />
+                  Anotarme Solo para Comer
+                </h3>
+                <form onSubmit={handleMealOnlySignup} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="mealOnlyName" className="text-green-700">
+                      Tu Nombre
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="mealOnlyName"
+                        placeholder="Ingresa tu nombre para comer"
+                        value={mealOnlyName}
+                        onChange={(e) => setMealOnlyName(e.target.value)}
+                        required
+                        className="border-green-200 focus-visible:ring-green-500"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
+                        className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                      >
+                        {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Al anotarte solo para comer, no ocuparás un lugar en la lista de jugadores.
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Al anotarte solo para comer, no ocuparás un lugar en la lista de jugadores.
-                  </p>
-                </div>
-              </form>
-            </TabsContent>
-          </Tabs>
+                </form>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
