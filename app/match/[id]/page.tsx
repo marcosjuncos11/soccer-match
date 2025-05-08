@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CalendarIcon, MapPin, Users, Utensils } from "lucide-react"
+import { CalendarIcon, MapPin, Users, Utensils, Share2 } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -155,7 +155,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players.map((player) => `${player.playerName}${player.hasMeal ? " 🍖" : ""}`).join("\n")
+    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍖" : ""}`).join("\n")
   }
 
   const handleShare = () => {
@@ -171,6 +171,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     message += `📅 ${format(new Date(match.dateTime), "PPP 'a las' p")}\n`
     message += `📍 ${match.locationName}\n\n`
 
+    // Add the signup link before the player list
+    message += `Anotate acá: ${shareableLink}\n\n`
+
     message += `*Jugadores (${mainListPlayers.length}/${match.playerLimit}):*\n`
     message += formatPlayerList(mainListPlayers)
 
@@ -179,15 +182,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       message += formatPlayerList(waitingListPlayers)
     }
 
-    message += `\n\nAnotate acá: ${shareableLink}`
-
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
   }
 
   if (isLoading) {
     return (
       <div className="container py-10 text-center">
-        <p>Cargando detalles del partido...</p>
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-green-700">Cargando detalles del partido...</p>
+        </div>
       </div>
     )
   }
@@ -195,7 +199,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   if (error || !match) {
     return (
       <div className="container py-10 text-center">
-        <p className="text-red-500">{error || "Partido no encontrado"}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 inline-block">
+          <p className="text-red-500 font-medium">{error || "Partido no encontrado"}</p>
+          <Button
+            variant="outline"
+            className="mt-4 border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => window.history.back()}
+          >
+            Volver
+          </Button>
+        </div>
       </div>
     )
   }
@@ -206,20 +219,24 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
   return (
     <div className="container py-10 max-w-4xl">
-      <Card>
-        <CardHeader>
+      <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
+        <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">{match.groupName}</CardTitle>
+              <CardTitle className="text-2xl text-green-800">{match.groupName}</CardTitle>
               <CardDescription>Detalles del Partido</CardDescription>
             </div>
             <div className="flex items-center gap-4">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
-                      <Utensils className="h-4 w-4" />
-                      <span>{totalMeals}</span>
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-1 px-3 py-1 border-green-200 bg-white shadow-sm"
+                    >
+                      <Utensils className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700 font-medium">{totalMeals}</span>
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -227,49 +244,62 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <Button onClick={() => setShowShareDialog(true)} className="bg-green-500 hover:bg-green-600">
-                Compartir por WhatsApp
+              <Button
+                onClick={() => setShowShareDialog(true)}
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Compartir
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-6">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="flex items-center">
+            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
               <CalendarIcon className="mr-2 h-5 w-5 text-green-600" />
-              <span>{format(new Date(match.dateTime), "PPP 'a las' p")}</span>
+              <span className="text-green-800">{format(new Date(match.dateTime), "PPP 'a las' p")}</span>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
               <MapPin className="mr-2 h-5 w-5 text-green-600" />
-              <span>{match.locationName}</span>
+              <span className="text-green-800">{match.locationName}</span>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
               <Users className="mr-2 h-5 w-5 text-green-600" />
-              <span>
+              <span className="text-green-800">
                 {mainListPlayers.length} / {match.playerLimit} jugadores
               </span>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-green-100" />
 
           <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <h3 className="text-lg font-medium mb-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-green-800 flex items-center">
+                <Users className="mr-2 h-5 w-5 text-green-600" />
                 Jugadores ({mainListPlayers.length}/{match.playerLimit})
               </h3>
               {mainListPlayers.length === 0 ? (
-                <p className="text-muted-foreground">Aún no hay jugadores inscritos. ¡Sé el primero!</p>
+                <p className="text-muted-foreground bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                  Aún no hay jugadores inscritos. ¡Sé el primero!
+                </p>
               ) : (
                 <ul className="space-y-2">
-                  {mainListPlayers.map((player) => (
-                    <li key={player.id} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                  {mainListPlayers.map((player, index) => (
+                    <li
+                      key={player.id}
+                      className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
                       <div className="flex items-center gap-2">
-                        <span>{player.playerName}</span>
+                        <span className="font-medium">{player.playerName}</span>
                         <button
                           onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                          className={`p-1 rounded-full ${
-                            player.hasMeal ? "text-green-600 bg-green-100" : "text-gray-400 hover:text-gray-600"
+                          className={`p-1.5 rounded-full transition-colors ${
+                            player.hasMeal
+                              ? "text-green-600 bg-green-100 hover:bg-green-200"
+                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                           }`}
                           aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
                         >
@@ -290,23 +320,34 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               )}
             </div>
 
-            <div>
-              <h3 className="text-lg font-medium mb-4">Lista de Espera ({waitingListPlayers.length})</h3>
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-green-800 flex items-center">
+                <Users className="mr-2 h-5 w-5 text-green-600" />
+                Lista de Espera ({waitingListPlayers.length})
+              </h3>
               {waitingListPlayers.length === 0 ? (
-                <p className="text-muted-foreground">No hay jugadores en lista de espera.</p>
+                <p className="text-muted-foreground bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                  No hay jugadores en lista de espera.
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {waitingListPlayers.map((player, index) => (
-                    <li key={player.id} className="flex justify-between items-center p-2 bg-muted rounded-md">
+                    <li
+                      key={player.id}
+                      className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
                       <div className="flex items-center gap-2">
                         <span>
-                          <span className="inline-block w-6 text-muted-foreground">{index + 1}.</span>
-                          {player.playerName}
+                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                          <span className="font-medium">{player.playerName}</span>
                         </span>
                         <button
                           onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                          className={`p-1 rounded-full ${
-                            player.hasMeal ? "text-green-600 bg-green-100" : "text-gray-400 hover:text-gray-600"
+                          className={`p-1.5 rounded-full transition-colors ${
+                            player.hasMeal
+                              ? "text-green-600 bg-green-100 hover:bg-green-200"
+                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                           }`}
                           aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
                         >
@@ -328,11 +369,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-green-100" />
 
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={handleSignup} className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100">
             <div className="space-y-2">
-              <Label htmlFor="playerName">Tu Nombre</Label>
+              <Label htmlFor="playerName" className="text-green-700">
+                Tu Nombre
+              </Label>
               <div className="flex gap-2">
                 <Input
                   id="playerName"
@@ -340,8 +383,13 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   required
+                  className="border-green-200 focus-visible:ring-green-500"
                 />
-                <Button type="submit" disabled={isSigningUp || !playerName.trim()}>
+                <Button
+                  type="submit"
+                  disabled={isSigningUp || !playerName.trim()}
+                  className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                >
                   {isSigningUp ? "Anotando..." : "Anotarme"}
                 </Button>
               </div>
@@ -351,10 +399,17 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       </Card>
 
       <AlertDialog open={showShareDialog} onOpenChange={setShowShareDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="animate-bounce-in border-green-200">
           <AlertDialogHeader>
-            <AlertDialogTitle>{newSignup ? "¡Te has anotado con éxito!" : "Compartir por WhatsApp"}</AlertDialogTitle>
-            <AlertDialogDescription>
+            <div className="flex justify-center mb-4">
+              <div className="bg-green-100 p-3 rounded-full">
+                <Share2 className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+            <AlertDialogTitle className="text-center">
+              {newSignup ? "¡Te has anotado con éxito!" : "Compartir por WhatsApp"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
               {newSignup
                 ? "¿Quieres compartir este partido con tus amigos por WhatsApp?"
                 : "¿Quieres compartir los detalles del partido y la lista de jugadores por WhatsApp?"}
@@ -375,6 +430,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 setShowShareDialog(false)
                 setNewSignup(false)
               }}
+              className="bg-green-600 hover:bg-green-700"
             >
               Compartir por WhatsApp
             </AlertDialogAction>
