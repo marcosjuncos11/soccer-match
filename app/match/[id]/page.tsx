@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Player {
   id: string
@@ -30,6 +31,7 @@ interface Player {
   signupTime: string
   matchId: string
   hasMeal: boolean
+  mealOnly: boolean
 }
 
 interface Match {
@@ -46,8 +48,10 @@ interface Match {
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
   const [match, setMatch] = useState<Match | null>(null)
   const [playerName, setPlayerName] = useState("")
+  const [mealOnlyName, setMealOnlyName] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningUp, setIsSigningUp] = useState(false)
+  const [isSigningUpMealOnly, setIsSigningUpMealOnly] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [newSignup, setNewSignup] = useState(false)
@@ -93,12 +97,12 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ playerName: playerName.trim() }),
+        body: JSON.stringify({ playerName: playerName.trim(), mealOnly: false }),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.message || "Error al inscribirse")
+        throw new Error(errorData.error || "Error al inscribirse")
       }
 
       await fetchMatch()
@@ -110,6 +114,37 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       alert(error.message || "Error al inscribirse. Por favor, inténtalo de nuevo.")
     } finally {
       setIsSigningUp(false)
+    }
+  }
+
+  const handleMealOnlySignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!mealOnlyName.trim()) return
+
+    setIsSigningUpMealOnly(true)
+    try {
+      const response = await fetch(`/api/matches/${params.id}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ playerName: mealOnlyName.trim(), mealOnly: true }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error al inscribirse")
+      }
+
+      await fetchMatch()
+      setMealOnlyName("")
+      setNewSignup(true)
+      setShowShareDialog(true)
+    } catch (error: any) {
+      console.error("Error signing up for meal only:", error)
+      alert(error.message || "Error al inscribirse. Por favor, inténtalo de nuevo.")
+    } finally {
+      setIsSigningUpMealOnly(false)
     }
   }
 
@@ -155,16 +190,17 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍖" : ""}`).join("\n")
+    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🥩" : ""}`).join("\n")
   }
 
   const handleShare = () => {
     if (!match) return
 
     const shareableLink = window.location.href
-    const mainListPlayers = match.signups.filter((player) => !player.isWaiting)
-    const waitingListPlayers = match.signups.filter((player) => player.isWaiting)
-    const totalMeals = match.signups.filter((player) => player.hasMeal).length
+    const mainListPlayers = match.signups.filter((player) => !player.isWaiting && !player.mealOnly)
+    const waitingListPlayers = match.signups.filter((player) => player.isWaiting && !player.mealOnly)
+    const mealOnlyPlayers = match.signups.filter((player) => player.mealOnly)
+    const totalMeals = match.signups.filter((player) => player.hasMeal || player.mealOnly).length
 
     let message = `¡Se largo la lista, para el asado [${totalMeals}]!\n\n`
     message += `*${match.groupName}*\n`
@@ -180,6 +216,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     if (waitingListPlayers.length > 0) {
       message += `\n\n*Lista de espera (${waitingListPlayers.length}):*\n`
       message += formatPlayerList(waitingListPlayers)
+    }
+
+    if (mealOnlyPlayers.length > 0) {
+      message += `\n\n*Solo para comer (${mealOnlyPlayers.length}):*\n`
+      message += formatPlayerList(mealOnlyPlayers)
     }
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
@@ -213,9 +254,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const mainListPlayers = match.signups.filter((player) => !player.isWaiting)
-  const waitingListPlayers = match.signups.filter((player) => player.isWaiting)
-  const totalMeals = match.signups.filter((player) => player.hasMeal).length
+  const mainListPlayers = match.signups.filter((player) => !player.isWaiting && !player.mealOnly)
+  const waitingListPlayers = match.signups.filter((player) => player.isWaiting && !player.mealOnly)
+  const mealOnlyPlayers = match.signups.filter((player) => player.mealOnly)
+  const totalMeals = match.signups.filter((player) => player.hasMeal || player.mealOnly).length
 
   return (
     <div className="container py-10 max-w-4xl">
@@ -293,6 +335,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-center gap-2">
+                        <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
                         <span className="font-medium">{player.playerName}</span>
                         <button
                           onClick={() => handleToggleMeal(player.id, player.hasMeal)}
@@ -338,10 +381,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-center gap-2">
-                        <span>
-                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                          <span className="font-medium">{player.playerName}</span>
-                        </span>
+                        <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                        <span className="font-medium">{player.playerName}</span>
                         <button
                           onClick={() => handleToggleMeal(player.id, player.hasMeal)}
                           className={`p-1.5 rounded-full transition-colors ${
@@ -369,32 +410,110 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-green-800 flex items-center">
+              <Utensils className="mr-2 h-5 w-5 text-green-600" />
+              Solo para Comer ({mealOnlyPlayers.length})
+            </h3>
+            {mealOnlyPlayers.length === 0 ? (
+              <p className="text-muted-foreground bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                No hay personas anotadas solo para comer.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {mealOnlyPlayers.map((player, index) => (
+                  <li
+                    key={player.id}
+                    className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                      <span className="font-medium">{player.playerName}</span>
+                      <span className="p-1.5 rounded-full text-green-600 bg-green-100">
+                        <Utensils className="h-4 w-4" />
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleUnsign(player.playerName)}
+                    >
+                      Eliminar
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           <Separator className="bg-green-100" />
 
-          <form onSubmit={handleSignup} className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100">
-            <div className="space-y-2">
-              <Label htmlFor="playerName" className="text-green-700">
-                Tu Nombre
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="playerName"
-                  placeholder="Ingresa tu nombre para anotarte"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  required
-                  className="border-green-200 focus-visible:ring-green-500"
-                />
-                <Button
-                  type="submit"
-                  disabled={isSigningUp || !playerName.trim()}
-                  className="bg-green-600 hover:bg-green-700 transition-all duration-300"
-                >
-                  {isSigningUp ? "Anotando..." : "Anotarme"}
-                </Button>
-              </div>
-            </div>
-          </form>
+          <Tabs defaultValue="player" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="player">Anotarme para Jugar</TabsTrigger>
+              <TabsTrigger value="meal">Anotarme Solo para Comer</TabsTrigger>
+            </TabsList>
+            <TabsContent value="player">
+              <form onSubmit={handleSignup} className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100">
+                <div className="space-y-2">
+                  <Label htmlFor="playerName" className="text-green-700">
+                    Tu Nombre
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="playerName"
+                      placeholder="Ingresa tu nombre para anotarte"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      required
+                      className="border-green-200 focus-visible:ring-green-500"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isSigningUp || !playerName.trim()}
+                      className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                    >
+                      {isSigningUp ? "Anotando..." : "Anotarme"}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </TabsContent>
+            <TabsContent value="meal">
+              <form
+                onSubmit={handleMealOnlySignup}
+                className="space-y-4 bg-green-50 p-4 rounded-lg border border-green-100"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="mealOnlyName" className="text-green-700">
+                    Tu Nombre (Solo para Comer)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="mealOnlyName"
+                      placeholder="Ingresa tu nombre para anotarte solo para comer"
+                      value={mealOnlyName}
+                      onChange={(e) => setMealOnlyName(e.target.value)}
+                      required
+                      className="border-green-200 focus-visible:ring-green-500"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
+                      className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                    >
+                      {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Al anotarte solo para comer, no ocuparás un lugar en la lista de jugadores.
+                  </p>
+                </div>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
