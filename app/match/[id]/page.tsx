@@ -189,7 +189,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍗" : ""}`).join("\n")
+    return players
+      .map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " (C)" : ""}`)
+      .join("\n")
   }
 
   const handleShare = () => {
@@ -201,10 +203,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     const mealOnlyPlayers = match.signups.filter((player) => player.mealOnly)
     const totalMeals = match.signups.filter((player) => player.hasMeal || player.mealOnly).length
 
-    let message = `¡Se largo la lista, para el asado [${totalMeals}]!\n\n`
+    let message = `¡Se largo la lista!\n\n`
     message += `*${match.groupName}*\n`
     message += `📅 ${format(new Date(match.dateTime), "PPP 'a las' p")}\n`
-    message += `📍 ${match.locationName}\n\n`
+    message += `📍 ${match.locationName}\n`
+    message += `   para el asado hay ${totalMeals} anotados!\n\n`
 
     // Add the signup link before the player list
     message += `Anotate acá: ${shareableLink}\n\n`

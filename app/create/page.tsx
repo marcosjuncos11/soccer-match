@@ -102,26 +102,27 @@ export default function CreateMatchPage() {
     }
   }
 
-  const formatPlayerList = () => {
-    return `*Jugadores (0/${playerLimit}):*\n(Aún no hay jugadores inscritos)`
-  }
-
   const handleShare = () => {
     if (!shareableLink) return
 
-    const message = `¡Se largo la lista, para el asado [0]!\n\n`
+    const message = `¡Se largo la lista!\n\n`
     const details = `*${groupName}*\n`
     const dateFormatted = date ? `📅 ${format(date, "PPP 'a las' p", { locale: es })}\n` : ""
-    const location = `📍 ${locationName}\n\n`
+    const location = `📍 ${locationName}\n`
+    const asadoCount = `   para el asado hay 0 anotados!\n\n`
 
     // Add the signup link before the player list
     const signupLink = `Anotate acá: ${shareableLink}\n\n`
 
     const playersList = formatPlayerList()
 
-    const fullMessage = `${message}${details}${dateFormatted}${location}${signupLink}${playersList}`
+    const fullMessage = `${message}${details}${dateFormatted}${location}${asadoCount}${signupLink}${playersList}`
 
     window.open(`https://wa.me/?text=${encodeURIComponent(fullMessage)}`, "_blank")
+  }
+
+  const formatPlayerList = () => {
+    return `*Jugadores (0/${playerLimit}):*\n(Aún no hay jugadores inscritos)`
   }
 
   // Redirect to home if not authenticated and dialog is closed
