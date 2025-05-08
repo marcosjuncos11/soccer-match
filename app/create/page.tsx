@@ -109,7 +109,7 @@ export default function CreateMatchPage() {
     const details = `*${groupName}*\n`
     const dateFormatted = date ? `📅 ${format(date, "PPP 'a las' p", { locale: es })}\n` : ""
     const location = `📍 ${locationName}\n`
-    const asadoCount = `   para el asado hay 0 anotados!\n\n`
+    const asadoCount = `🍖 PARA EL ASADO HAY 0 ANOTADOS!\n\n`
 
     // Add the signup link before the player list
     const signupLink = `Anotate acá: ${shareableLink}\n\n`

@@ -10,8 +10,6 @@ import { Label } from "@/components/ui/label"
 import { CalendarIcon, MapPin, Users, Utensils, Share2 } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,9 +187,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players
-      .map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " (C)" : ""}`)
-      .join("\n")
+    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " *" : ""}`).join("\n")
   }
 
   const handleShare = () => {
@@ -207,7 +203,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     message += `*${match.groupName}*\n`
     message += `📅 ${format(new Date(match.dateTime), "PPP 'a las' p")}\n`
     message += `📍 ${match.locationName}\n`
-    message += `   para el asado hay ${totalMeals} anotados!\n\n`
+    message += `🍖 PARA EL ASADO HAY ${totalMeals} ANOTADOS!\n\n`
 
     // Add the signup link before the player list
     message += `Anotate acá: ${shareableLink}\n\n`
@@ -272,22 +268,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <CardDescription>Detalles del Partido</CardDescription>
             </div>
             <div className="flex items-center gap-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="flex items-center gap-1 px-3 py-1 border-green-200 bg-white shadow-sm"
-                    >
-                      <Utensils className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700 font-medium">{totalMeals}</span>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Total de comidas solicitadas</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
               <Button
                 onClick={() => setShowShareDialog(true)}
                 className="bg-green-600 hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
@@ -299,7 +279,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
               <CalendarIcon className="mr-2 h-5 w-5 text-green-600" />
               <span className="text-green-800">{format(new Date(match.dateTime), "PPP 'a las' p")}</span>
@@ -313,6 +293,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
               <span className="text-green-800">
                 {mainListPlayers.length} / {match.playerLimit} jugadores
               </span>
+            </div>
+            <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
+              <Utensils className="mr-2 h-5 w-5 text-green-600" />
+              <span className="text-green-800">{totalMeals} para asado</span>
             </div>
           </div>
 
