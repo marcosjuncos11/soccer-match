@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CalendarIcon, MapPin, Users, Utensils, Share2 } from "lucide-react"
+import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { PositionSelector } from "@/components/position-selector"
+import { useRouter } from "next/navigation"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,7 @@ interface Match {
 }
 
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
   const [match, setMatch] = useState<Match | null>(null)
   const [playerName, setPlayerName] = useState("")
   const [playerPositions, setPlayerPositions] = useState<string[]>([])
@@ -56,6 +58,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [error, setError] = useState<string | null>(null)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [newSignup, setNewSignup] = useState(false)
+  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
+  const [editingPositions, setEditingPositions] = useState<string[]>([])
+  const [isUpdatingPositions, setIsUpdatingPositions] = useState(false)
 
   const fetchMatch = useCallback(async () => {
     try {
@@ -80,12 +85,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
     // Set up auto-refresh every 5 seconds
     const intervalId = setInterval(() => {
-      fetchMatch()
+      // Only refresh if not editing positions
+      if (!editingPlayerId) {
+        fetchMatch()
+      }
     }, 5000)
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId)
-  }, [fetchMatch])
+  }, [fetchMatch, editingPlayerId])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -199,6 +207,47 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  const handleEditPositions = (player: Player) => {
+    setEditingPlayerId(player.id)
+    setEditingPositions(player.positions || [])
+  }
+
+  const handleCancelEditPositions = () => {
+    setEditingPlayerId(null)
+    setEditingPositions([])
+  }
+
+  const handleSavePositions = async () => {
+    if (!editingPlayerId) return
+
+    setIsUpdatingPositions(true)
+    try {
+      const response = await fetch(`/api/matches/${params.id}/player/positions`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          playerId: editingPlayerId,
+          positions: editingPositions,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al actualizar las posiciones")
+      }
+
+      await fetchMatch()
+      setEditingPlayerId(null)
+      setEditingPositions([])
+    } catch (error) {
+      console.error("Error updating positions:", error)
+      alert("Error al actualizar las posiciones. Por favor, inténtalo de nuevo.")
+    } finally {
+      setIsUpdatingPositions(false)
+    }
+  }
+
   const formatPlayerList = (players: Player[]) => {
     return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " *" : ""}`).join("\n")
   }
@@ -304,8 +353,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
             </div>
             <div className="flex items-center gap-4">
               <Button
+                onClick={() => router.push(`/match/${params.id}/teams`)}
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+              >
+                <UsersRound className="mr-2 h-4 w-4" />
+                Armar Equipos
+              </Button>
+              <Button
                 onClick={() => setShowShareDialog(true)}
-                className="bg-green-600 hover:bg-green-700 transition-all duration-300 transform hover:scale-105"
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300"
               >
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartir
@@ -355,32 +411,74 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                          <span className="font-medium">{player.playerName}</span>
-                          <button
-                            onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                            className={`p-1.5 rounded-full transition-colors ${
-                              player.hasMeal
-                                ? "text-green-600 bg-green-100 hover:bg-green-200"
-                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                            }`}
-                            aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                          >
-                            <Utensils className="h-4 w-4" />
-                          </button>
+                      {editingPlayerId === player.id ? (
+                        <div className="w-full space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                            <span className="font-medium">{player.playerName}</span>
+                          </div>
+                          <PositionSelector
+                            onChange={setEditingPositions}
+                            initialPositions={editingPositions}
+                            disabled={isUpdatingPositions}
+                          />
+                          <div className="flex justify-end gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCancelEditPositions}
+                              disabled={isUpdatingPositions}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleSavePositions}
+                              disabled={isUpdatingPositions}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {isUpdatingPositions ? "Guardando..." : "Guardar"}
+                            </Button>
+                          </div>
                         </div>
-                        {getPositionBadges(player.positions)}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleUnsign(player.playerName)}
-                      >
-                        Eliminar
-                      </Button>
+                      ) : (
+                        <>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                              <span className="font-medium">{player.playerName}</span>
+                              <button
+                                onClick={() => handleToggleMeal(player.id, player.hasMeal)}
+                                className={`p-1.5 rounded-full transition-colors ${
+                                  player.hasMeal
+                                    ? "text-green-600 bg-green-100 hover:bg-green-200"
+                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                }`}
+                                aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
+                              >
+                                <Utensils className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEditPositions(player)}
+                                className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                aria-label="Editar posiciones"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                            </div>
+                            {getPositionBadges(player.positions)}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleUnsign(player.playerName)}
+                          >
+                            Eliminar
+                          </Button>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -404,32 +502,74 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                          <span className="font-medium">{player.playerName}</span>
-                          <button
-                            onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                            className={`p-1.5 rounded-full transition-colors ${
-                              player.hasMeal
-                                ? "text-green-600 bg-green-100 hover:bg-green-200"
-                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                            }`}
-                            aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                          >
-                            <Utensils className="h-4 w-4" />
-                          </button>
+                      {editingPlayerId === player.id ? (
+                        <div className="w-full space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                            <span className="font-medium">{player.playerName}</span>
+                          </div>
+                          <PositionSelector
+                            onChange={setEditingPositions}
+                            initialPositions={editingPositions}
+                            disabled={isUpdatingPositions}
+                          />
+                          <div className="flex justify-end gap-2 mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCancelEditPositions}
+                              disabled={isUpdatingPositions}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleSavePositions}
+                              disabled={isUpdatingPositions}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              {isUpdatingPositions ? "Guardando..." : "Guardar"}
+                            </Button>
+                          </div>
                         </div>
-                        {getPositionBadges(player.positions)}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleUnsign(player.playerName)}
-                      >
-                        Eliminar
-                      </Button>
+                      ) : (
+                        <>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                              <span className="font-medium">{player.playerName}</span>
+                              <button
+                                onClick={() => handleToggleMeal(player.id, player.hasMeal)}
+                                className={`p-1.5 rounded-full transition-colors ${
+                                  player.hasMeal
+                                    ? "text-green-600 bg-green-100 hover:bg-green-200"
+                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                                }`}
+                                aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
+                              >
+                                <Utensils className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEditPositions(player)}
+                                className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                                aria-label="Editar posiciones"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                            </div>
+                            {getPositionBadges(player.positions)}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleUnsign(player.playerName)}
+                          >
+                            Eliminar
+                          </Button>
+                        </>
+                      )}
                     </li>
                   ))}
                 </ul>
