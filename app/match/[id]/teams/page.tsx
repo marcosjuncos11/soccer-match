@@ -205,6 +205,11 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     team1Players.forEach((player, index) => {
       let playerInfo = `${index + 1}. ${player.playerName}`
 
+      // Add meal indicator
+      if (player.hasMeal) {
+        playerInfo += ` 🍖`
+      }
+
       // Add positions if available
       if (player.positions && player.positions.length > 0) {
         const positionText = player.positions.map((pos) => positionLabels[pos] || pos).join(", ")
@@ -218,6 +223,11 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     message += `\n*EQUIPO 2 (${team2Players.length} jugadores)*\n`
     team2Players.forEach((player, index) => {
       let playerInfo = `${index + 1}. ${player.playerName}`
+
+      // Add meal indicator
+      if (player.hasMeal) {
+        playerInfo += ` 🍖`
+      }
 
       // Add positions if available
       if (player.positions && player.positions.length > 0) {

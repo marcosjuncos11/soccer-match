@@ -256,7 +256,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   }
 
   const formatPlayerList = (players: Player[]) => {
-    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " *" : ""}`).join("\n")
+    return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍖" : ""}`).join("\n")
   }
 
   const handleShare = () => {
