@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeftRight, RefreshCw, ArrowLeft } from "lucide-react"
+import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
 interface Player {
   id: string
@@ -178,6 +180,59 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     )
   }
 
+  const handleShareTeams = () => {
+    if (!match) return
+
+    const team1Players = teamPlayers.filter((player) => player.team === 1)
+    const team2Players = teamPlayers.filter((player) => player.team === 2)
+
+    const positionLabels: Record<string, string> = {
+      arco: "Arco",
+      defensa: "Defensa",
+      medio: "Medio",
+      delantero: "Delantero",
+    }
+
+    // Format the message
+    let message = `*EQUIPOS PARA EL PARTIDO*\n\n`
+
+    // Add match details
+    message += `*${match.groupName}*\n`
+    message += `📅 ${format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}\n`
+    message += `📍 ${match.locationName}\n\n`
+
+    // Team 1
+    message += `*EQUIPO 1 (${team1Players.length} jugadores)*\n`
+    team1Players.forEach((player, index) => {
+      let playerInfo = `${index + 1}. ${player.playerName}`
+
+      // Add positions if available
+      if (player.positions && player.positions.length > 0) {
+        const positionText = player.positions.map((pos) => positionLabels[pos] || pos).join(", ")
+        playerInfo += ` (${positionText})`
+      }
+
+      message += `${playerInfo}\n`
+    })
+
+    // Team 2
+    message += `\n*EQUIPO 2 (${team2Players.length} jugadores)*\n`
+    team2Players.forEach((player, index) => {
+      let playerInfo = `${index + 1}. ${player.playerName}`
+
+      // Add positions if available
+      if (player.positions && player.positions.length > 0) {
+        const positionText = player.positions.map((pos) => positionLabels[pos] || pos).join(", ")
+        playerInfo += ` (${positionText})`
+      }
+
+      message += `${playerInfo}\n`
+    })
+
+    // Open WhatsApp with the message
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
+  }
+
   // Helper function to display positions
   const getPositionBadges = (positions: string[]) => {
     if (!positions || positions.length === 0) return null
@@ -255,10 +310,16 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
             Volver al Partido
           </Link>
         </Button>
-        <Button onClick={handleRegenerateTeams} disabled={isGenerating} className="bg-green-600 hover:bg-green-700">
-          <RefreshCw className="mr-2 h-4 w-4" />
-          {isGenerating ? "Generando..." : "Armar de Nuevo"}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleShareTeams} className="bg-green-600 hover:bg-green-700">
+            <Share2 className="mr-2 h-4 w-4" />
+            Compartir Equipos
+          </Button>
+          <Button onClick={handleRegenerateTeams} disabled={isGenerating} className="bg-green-600 hover:bg-green-700">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {isGenerating ? "Generando..." : "Armar de Nuevo"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
