@@ -2,12 +2,12 @@
 
 import type React from "react"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound } from "lucide-react"
+import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound, UserPlus } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -62,6 +62,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [editingPositions, setEditingPositions] = useState<string[]>([])
   const [isUpdatingPositions, setIsUpdatingPositions] = useState(false)
 
+  // Ref for the signup section
+  const signupSectionRef = useRef<HTMLDivElement>(null)
+
   const fetchMatch = useCallback(async () => {
     try {
       const response = await fetch(`/api/matches/${params.id}`)
@@ -94,6 +97,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId)
   }, [fetchMatch, editingPlayerId])
+
+  const scrollToSignup = () => {
+    signupSectionRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -346,22 +353,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
         <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
             <div>
               <CardTitle className="text-2xl text-green-800">{match.groupName}</CardTitle>
               <CardDescription>Detalles del Partido</CardDescription>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={scrollToSignup}
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300 flex-grow md:flex-grow-0"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Anotarme
+              </Button>
               <Button
                 onClick={() => router.push(`/match/${params.id}/teams`)}
-                className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300 flex-grow md:flex-grow-0"
               >
                 <UsersRound className="mr-2 h-4 w-4" />
                 Armar Equipos
               </Button>
               <Button
                 onClick={() => setShowShareDialog(true)}
-                className="bg-green-600 hover:bg-green-700 transition-all duration-300"
+                className="bg-green-600 hover:bg-green-700 transition-all duration-300 flex-grow md:flex-grow-0"
               >
                 <Share2 className="mr-2 h-4 w-4" />
                 Compartir
@@ -370,24 +384,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           </div>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
             <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-              <CalendarIcon className="mr-2 h-5 w-5 text-green-600" />
-              <span className="text-green-800">{format(new Date(match.dateTime), "PPP 'a las' p")}</span>
+              <CalendarIcon className="mr-2 h-5 w-5 text-green-600 flex-shrink-0" />
+              <span className="text-green-800 text-sm md:text-base">
+                {format(new Date(match.dateTime), "PPP 'a las' p")}
+              </span>
             </div>
             <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-              <MapPin className="mr-2 h-5 w-5 text-green-600" />
-              <span className="text-green-800">{match.locationName}</span>
+              <MapPin className="mr-2 h-5 w-5 text-green-600 flex-shrink-0" />
+              <span className="text-green-800 text-sm md:text-base">{match.locationName}</span>
             </div>
             <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-              <Users className="mr-2 h-5 w-5 text-green-600" />
-              <span className="text-green-800">
+              <Users className="mr-2 h-5 w-5 text-green-600 flex-shrink-0" />
+              <span className="text-green-800 text-sm md:text-base">
                 {mainListPlayers.length} / {match.playerLimit} jugadores
               </span>
             </div>
             <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-100">
-              <Utensils className="mr-2 h-5 w-5 text-green-600" />
-              <span className="text-green-800">{totalMeals} para asado</span>
+              <Utensils className="mr-2 h-5 w-5 text-green-600 flex-shrink-0" />
+              <span className="text-green-800 text-sm md:text-base">{totalMeals} para asado</span>
             </div>
           </div>
 
@@ -618,7 +634,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           <Separator className="bg-green-100" />
 
           {/* Two separate signup sections */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div ref={signupSectionRef} className="grid gap-6 md:grid-cols-2">
             {/* Player signup section */}
             <div className="space-y-4">
               <div className="bg-green-50 p-4 rounded-lg border border-green-100">

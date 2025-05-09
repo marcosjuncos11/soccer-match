@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -303,28 +302,31 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="container py-10 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <Button variant="outline" asChild className="flex items-center gap-2">
-          <Link href={`/match/${params.id}`}>
-            <ArrowLeft className="h-4 w-4" />
-            Volver al Partido
-          </Link>
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+        <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 w-full sm:w-auto">
+          <ArrowLeft className="h-4 w-4" />
+          Volver al Partido
         </Button>
-        <div className="flex gap-2">
-          <Button onClick={handleShareTeams} className="bg-green-600 hover:bg-green-700">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={handleShareTeams} className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-auto">
             <Share2 className="mr-2 h-4 w-4" />
             Compartir Equipos
           </Button>
-          <Button onClick={handleRegenerateTeams} disabled={isGenerating} className="bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={handleRegenerateTeams}
+            disabled={isGenerating}
+            className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-auto"
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             {isGenerating ? "Generando..." : "Armar de Nuevo"}
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* Force side-by-side layout even on mobile with flex and min-width */}
+      <div className="flex flex-nowrap overflow-x-auto gap-4 pb-4">
         {/* Team 1 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden min-w-[280px] w-1/2 flex-shrink-0">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
           <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
             <CardTitle className="text-xl text-green-800">Equipo 1</CardTitle>
@@ -382,7 +384,7 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </Card>
 
         {/* Team 2 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden min-w-[280px] w-1/2 flex-shrink-0">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
           <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
             <CardTitle className="text-xl text-green-800">Equipo 2</CardTitle>
