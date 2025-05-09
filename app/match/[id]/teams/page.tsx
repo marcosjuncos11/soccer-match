@@ -323,34 +323,34 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Force side-by-side layout even on mobile with flex and min-width */}
-      <div className="flex flex-nowrap overflow-x-auto gap-4 pb-4">
+      {/* Teams side by side with responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Team 1 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden min-w-[280px] w-1/2 flex-shrink-0">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-            <CardTitle className="text-xl text-green-800">Equipo 1</CardTitle>
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4">
+            <CardTitle className="text-lg sm:text-xl text-green-800">Equipo 1</CardTitle>
             <CardDescription>{team1Players.length} jugadores</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap gap-2 mb-4">
+          <CardContent className="pt-3 p-3 sm:pt-4 sm:p-4">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
               {team1Positions.arco > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Arco: {team1Positions.arco}
                 </Badge>
               )}
               {team1Positions.defensa > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Defensa: {team1Positions.defensa}
                 </Badge>
               )}
               {team1Positions.medio > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Medio: {team1Positions.medio}
                 </Badge>
               )}
               {team1Positions.delantero > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Delantero: {team1Positions.delantero}
                 </Badge>
               )}
@@ -360,19 +360,21 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
               {team1Players.map((player, index) => (
                 <li
                   key={player.id}
-                  className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex justify-between items-start p-2 sm:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                      <span className="font-medium">{player.playerName}</span>
+                  <div className="flex flex-col max-w-[75%]">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="inline-block w-4 sm:w-6 text-green-600 font-bold text-sm sm:text-base">
+                        {index + 1}.
+                      </span>
+                      <span className="font-medium text-sm sm:text-base truncate">{player.playerName}</span>
                     </div>
                     {getPositionBadges(player.positions)}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1 sm:p-2"
                     onClick={() => movePlayerToOtherTeam(player.id)}
                   >
                     <ArrowLeftRight className="h-4 w-4" />
@@ -384,31 +386,31 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </Card>
 
         {/* Team 2 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden min-w-[280px] w-1/2 flex-shrink-0">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-            <CardTitle className="text-xl text-green-800">Equipo 2</CardTitle>
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4">
+            <CardTitle className="text-lg sm:text-xl text-green-800">Equipo 2</CardTitle>
             <CardDescription>{team2Players.length} jugadores</CardDescription>
           </CardHeader>
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap gap-2 mb-4">
+          <CardContent className="pt-3 p-3 sm:pt-4 sm:p-4">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
               {team2Positions.arco > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Arco: {team2Positions.arco}
                 </Badge>
               )}
               {team2Positions.defensa > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Defensa: {team2Positions.defensa}
                 </Badge>
               )}
               {team2Positions.medio > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Medio: {team2Positions.medio}
                 </Badge>
               )}
               {team2Positions.delantero > 0 && (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Delantero: {team2Positions.delantero}
                 </Badge>
               )}
@@ -418,19 +420,21 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
               {team2Players.map((player, index) => (
                 <li
                   key={player.id}
-                  className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex justify-between items-start p-2 sm:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                      <span className="font-medium">{player.playerName}</span>
+                  <div className="flex flex-col max-w-[75%]">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      <span className="inline-block w-4 sm:w-6 text-green-600 font-bold text-sm sm:text-base">
+                        {index + 1}.
+                      </span>
+                      <span className="font-medium text-sm sm:text-base truncate">{player.playerName}</span>
                     </div>
                     {getPositionBadges(player.positions)}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1 sm:p-2"
                     onClick={() => movePlayerToOtherTeam(player.id)}
                   >
                     <ArrowLeftRight className="h-4 w-4" />

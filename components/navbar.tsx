@@ -18,7 +18,7 @@ export function Navbar() {
         <div className="container flex h-16 items-center">
           <div className="font-bold text-xl text-green-800 flex items-center gap-2">
             <SoccerBall className="h-8 w-8" />
-            <span>Fútbol Inscripción</span>
+            <span>Fulbito</span>
           </div>
         </div>
       </header>
@@ -34,7 +34,7 @@ export function Navbar() {
           className="font-bold text-xl text-green-800 flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           <SoccerBall className="h-8 w-8" />
-          <span>Fútbol Inscripción</span>
+          <span>Fulbito</span>
         </Link>
         <nav className="flex gap-4">
           <Button asChild variant="ghost" className="text-green-700 hover:text-green-800 hover:bg-green-50">

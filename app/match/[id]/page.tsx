@@ -315,6 +315,24 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
+  // Render meal icon with enhanced visibility
+  const renderMealIcon = (playerId: string, hasMeal: boolean) => {
+    return (
+      <button
+        onClick={() => handleToggleMeal(playerId, hasMeal)}
+        className={`rounded-full transition-all ${
+          hasMeal
+            ? "bg-green-500 text-white p-2 shadow-md hover:bg-green-600"
+            : "text-gray-400 p-1.5 hover:text-gray-600 hover:bg-gray-100"
+        }`}
+        aria-label={hasMeal ? "Quitar comida" : "Agregar comida"}
+        title={hasMeal ? "Anotado para comer" : "Anotar para comer"}
+      >
+        <Utensils className={`${hasMeal ? "h-5 w-5" : "h-4 w-4"}`} />
+      </button>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="container py-10 text-center">
@@ -464,17 +482,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                             <div className="flex items-center gap-2">
                               <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
                               <span className="font-medium">{player.playerName}</span>
-                              <button
-                                onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                                className={`p-1.5 rounded-full transition-colors ${
-                                  player.hasMeal
-                                    ? "text-green-600 bg-green-100 hover:bg-green-200"
-                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                                }`}
-                                aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                              >
-                                <Utensils className="h-4 w-4" />
-                              </button>
+                              {renderMealIcon(player.id, player.hasMeal)}
                               <button
                                 onClick={() => handleEditPositions(player)}
                                 className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
@@ -555,17 +563,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                             <div className="flex items-center gap-2">
                               <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
                               <span className="font-medium">{player.playerName}</span>
-                              <button
-                                onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                                className={`p-1.5 rounded-full transition-colors ${
-                                  player.hasMeal
-                                    ? "text-green-600 bg-green-100 hover:bg-green-200"
-                                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                                }`}
-                                aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                              >
-                                <Utensils className="h-4 w-4" />
-                              </button>
+                              {renderMealIcon(player.id, player.hasMeal)}
                               <button
                                 onClick={() => handleEditPositions(player)}
                                 className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
@@ -613,8 +611,8 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <div className="flex items-center gap-2">
                       <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
                       <span className="font-medium">{player.playerName}</span>
-                      <span className="p-1.5 rounded-full text-green-600 bg-green-100">
-                        <Utensils className="h-4 w-4" />
+                      <span className="bg-green-500 text-white p-2 rounded-full shadow-md">
+                        <Utensils className="h-5 w-5" />
                       </span>
                     </div>
                     <Button
