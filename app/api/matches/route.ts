@@ -14,6 +14,14 @@ export async function GET() {
       ORDER BY m."dateTime" ASC
     `
 
+    // For each match, get the signups to calculate positions
+    for (const match of matches) {
+      const signups = await sql`
+        SELECT * FROM "Signup" WHERE "matchId" = ${match.id}
+      `
+      match.signups = signups
+    }
+
     return NextResponse.json(matches)
   } catch (error) {
     console.error("Error fetching matches:", error)

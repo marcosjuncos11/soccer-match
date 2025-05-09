@@ -18,8 +18,10 @@ export function TimePickerDemo({ time, setTime }: TimePickerProps) {
   useEffect(() => {
     if (time) {
       const [h, m] = time.split(":").map(Number)
-      setHours(h)
-      setMinutes(m)
+      if (!isNaN(h) && !isNaN(m)) {
+        setHours(h)
+        setMinutes(m)
+      }
     }
   }, [time])
 

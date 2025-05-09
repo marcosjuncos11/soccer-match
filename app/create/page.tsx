@@ -65,9 +65,17 @@ export default function CreateMatchPage() {
         throw new Error("Se requiere una fecha")
       }
 
+      // Create a new date object with the selected date
       const [hours, minutes] = time.split(":").map(Number)
-      const dateTime = new Date(date)
-      dateTime.setHours(hours, minutes)
+
+      // Create a new date object to avoid mutating the original date
+      const dateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0)
+
+      // Log the date and time for debugging
+      console.log("Date selected:", date)
+      console.log("Time selected:", time)
+      console.log("Combined dateTime:", dateTime)
+      console.log("ISO string:", dateTime.toISOString())
 
       const response = await fetch("/api/matches", {
         method: "POST",
@@ -107,7 +115,15 @@ export default function CreateMatchPage() {
 
     const message = `¡Se largo la lista!\n\n`
     const details = `*${groupName}*\n`
-    const dateFormatted = date ? `📅 ${format(date, "PPP 'a las' p", { locale: es })}\n` : ""
+
+    // Format the date and time for sharing
+    let dateFormatted = ""
+    if (date) {
+      const [hours, minutes] = time.split(":").map(Number)
+      const dateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, 0)
+      dateFormatted = `📅 ${format(dateTime, "PPP 'a las' p", { locale: es })}\n`
+    }
+
     const location = `📍 ${locationName}\n`
     const asadoCount = `🍖 PARA EL ASADO HAY 0 ANOTADOS!\n\n`
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { CalendarIcon, Share2, Users, Utensils, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+interface Player {
+  id: string
+  playerName: string
+  isWaiting: boolean
+  hasMeal: boolean
+  mealOnly: boolean
+  positions: string[]
+}
+
 interface Match {
   id: string
   groupName: string
@@ -26,6 +36,7 @@ interface Match {
   playerLimit: number
   signupCount: number
   mealCount: number
+  signups: Player[]
 }
 
 export default function Home() {
@@ -82,6 +93,30 @@ export default function Home() {
     }
   }
 
+  // Helper function to get position counts
+  const getPositionCounts = (match: Match) => {
+    if (!match.signups) return null
+
+    const positions = {
+      arco: 0,
+      defensa: 0,
+      medio: 0,
+      delantero: 0,
+    }
+
+    match.signups.forEach((player) => {
+      if (player.positions && !player.mealOnly) {
+        player.positions.forEach((pos) => {
+          if (positions[pos as keyof typeof positions] !== undefined) {
+            positions[pos as keyof typeof positions]++
+          }
+        })
+      }
+    })
+
+    return positions
+  }
+
   return (
     <div className="container mx-auto py-10">
       <div className="flex flex-col items-center justify-center space-y-8 text-center mb-12">
@@ -127,65 +162,97 @@ export default function Home() {
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {matches.map((match) => (
-            <Card
-              key={match.id}
-              className="border-green-200 shadow-lg hover:shadow-xl transition-shadow animate-fade-in overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
-              <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-green-800">{match.groupName}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => setMatchToDelete(match.id)}
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                </div>
-                <CardDescription>{format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-2">
-                  <div className="flex items-center text-muted-foreground">
-                    <Users className="mr-2 h-4 w-4 text-green-600" />
-                    <span>
-                      {match.signupCount} / {match.playerLimit} jugadores
-                    </span>
+          {matches.map((match) => {
+            const positionCounts = getPositionCounts(match)
+
+            return (
+              <Card
+                key={match.id}
+                className="border-green-200 shadow-lg hover:shadow-xl transition-shadow animate-fade-in overflow-hidden"
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-green-600"></div>
+                <CardHeader className="bg-gradient-to-r from-green-50 to-green-100">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-green-800">{match.groupName}</CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => setMatchToDelete(match.id)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <Utensils className="mr-2 h-4 w-4 text-green-600" />
-                    <span>{match.mealCount} para asado</span>
+                  <CardDescription>{format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center text-muted-foreground">
+                      <Users className="mr-2 h-4 w-4 text-green-600" />
+                      <span>
+                        {match.signupCount} / {match.playerLimit} jugadores
+                      </span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <Utensils className="mr-2 h-4 w-4 text-green-600" />
+                      <span>{match.mealCount} para asado</span>
+                    </div>
+                    <div className="flex items-center text-muted-foreground">
+                      <CalendarIcon className="mr-2 h-4 w-4 text-green-600" />
+                      <span>{match.locationName}</span>
+                    </div>
+
+                    {positionCounts && (
+                      <div className="mt-3 pt-3 border-t border-green-100">
+                        <p className="text-sm text-green-700 mb-2">Posiciones:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {positionCounts.arco > 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Arco: {positionCounts.arco}
+                            </Badge>
+                          )}
+                          {positionCounts.defensa > 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Defensa: {positionCounts.defensa}
+                            </Badge>
+                          )}
+                          {positionCounts.medio > 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Medio: {positionCounts.medio}
+                            </Badge>
+                          )}
+                          {positionCounts.delantero > 0 && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Delantero: {positionCounts.delantero}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center text-muted-foreground">
-                    <CalendarIcon className="mr-2 h-4 w-4 text-green-600" />
-                    <span>{match.locationName}</span>
+                </CardContent>
+                <CardFooter className="bg-gradient-to-r from-green-50 to-green-100">
+                  <div className="w-full grid grid-cols-2 gap-2">
+                    <Button asChild className="bg-green-600 hover:bg-green-700">
+                      <Link href={`/match/${match.id}`}>Ver Detalles</Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-green-200 text-green-700 hover:bg-green-50"
+                      onClick={() => {
+                        const shareableLink = `${window.location.origin}/match/${match.id}`
+                        const message = `¡Se largo la lista!\n\n*${match.groupName}*\n📅 ${format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}\n📍 ${match.locationName}\n🍖 PARA EL ASADO HAY ${match.mealCount} ANOTADOS!\n\nAnotate acá: ${shareableLink}`
+                        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Compartir
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter className="bg-gradient-to-r from-green-50 to-green-100">
-                <div className="w-full grid grid-cols-2 gap-2">
-                  <Button asChild className="bg-green-600 hover:bg-green-700">
-                    <Link href={`/match/${match.id}`}>Ver Detalles</Link>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-green-200 text-green-700 hover:bg-green-50"
-                    onClick={() => {
-                      const shareableLink = `${window.location.origin}/match/${match.id}`
-                      const message = `¡Se largo la lista!\n\n*${match.groupName}*\n📅 ${format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}\n📍 ${match.locationName}\n🍖 PARA EL ASADO HAY ${match.mealCount} ANOTADOS!\n\nAnotate acá: ${shareableLink}`
-                      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
-                    }}
-                  >
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Compartir
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardFooter>
+              </Card>
+            )
+          })}
         </div>
       )}
 

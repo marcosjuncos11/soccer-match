@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { CalendarIcon, MapPin, Users, Utensils, Share2 } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { PositionSelector } from "@/components/position-selector"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +31,7 @@ interface Player {
   matchId: string
   hasMeal: boolean
   mealOnly: boolean
+  positions: string[]
 }
 
 interface Match {
@@ -45,6 +48,7 @@ interface Match {
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
   const [match, setMatch] = useState<Match | null>(null)
   const [playerName, setPlayerName] = useState("")
+  const [playerPositions, setPlayerPositions] = useState<string[]>([])
   const [mealOnlyName, setMealOnlyName] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningUp, setIsSigningUp] = useState(false)
@@ -94,7 +98,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ playerName: playerName.trim(), mealOnly: false }),
+        body: JSON.stringify({
+          playerName: playerName.trim(),
+          mealOnly: false,
+          positions: playerPositions,
+        }),
       })
 
       if (!response.ok) {
@@ -104,6 +112,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
       await fetchMatch()
       setPlayerName("")
+      setPlayerPositions([])
       setNewSignup(true)
       setShowShareDialog(true)
     } catch (error: any) {
@@ -125,7 +134,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ playerName: mealOnlyName.trim(), mealOnly: true }),
+        body: JSON.stringify({
+          playerName: mealOnlyName.trim(),
+          mealOnly: true,
+          positions: [],
+        }),
       })
 
       if (!response.ok) {
@@ -224,6 +237,28 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
   }
 
+  // Helper function to display positions
+  const getPositionBadges = (positions: string[]) => {
+    if (!positions || positions.length === 0) return null
+
+    const positionLabels: Record<string, string> = {
+      arco: "Arco",
+      defensa: "Defensa",
+      medio: "Medio",
+      delantero: "Delantero",
+    }
+
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {positions.map((pos) => (
+          <Badge key={pos} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+            {positionLabels[pos] || pos}
+          </Badge>
+        ))}
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="container py-10 text-center">
@@ -317,23 +352,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   {mainListPlayers.map((player, index) => (
                     <li
                       key={player.id}
-                      className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
+                      className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                        <span className="font-medium">{player.playerName}</span>
-                        <button
-                          onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                          className={`p-1.5 rounded-full transition-colors ${
-                            player.hasMeal
-                              ? "text-green-600 bg-green-100 hover:bg-green-200"
-                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                          }`}
-                          aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                        >
-                          <Utensils className="h-4 w-4" />
-                        </button>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                          <span className="font-medium">{player.playerName}</span>
+                          <button
+                            onClick={() => handleToggleMeal(player.id, player.hasMeal)}
+                            className={`p-1.5 rounded-full transition-colors ${
+                              player.hasMeal
+                                ? "text-green-600 bg-green-100 hover:bg-green-200"
+                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                            }`}
+                            aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
+                          >
+                            <Utensils className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {getPositionBadges(player.positions)}
                       </div>
                       <Button
                         variant="ghost"
@@ -363,23 +401,26 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   {waitingListPlayers.map((player, index) => (
                     <li
                       key={player.id}
-                      className="flex justify-between items-center p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
+                      className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                        <span className="font-medium">{player.playerName}</span>
-                        <button
-                          onClick={() => handleToggleMeal(player.id, player.hasMeal)}
-                          className={`p-1.5 rounded-full transition-colors ${
-                            player.hasMeal
-                              ? "text-green-600 bg-green-100 hover:bg-green-200"
-                              : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                          }`}
-                          aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
-                        >
-                          <Utensils className="h-4 w-4" />
-                        </button>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                          <span className="font-medium">{player.playerName}</span>
+                          <button
+                            onClick={() => handleToggleMeal(player.id, player.hasMeal)}
+                            className={`p-1.5 rounded-full transition-colors ${
+                              player.hasMeal
+                                ? "text-green-600 bg-green-100 hover:bg-green-200"
+                                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                            }`}
+                            aria-label={player.hasMeal ? "Quitar comida" : "Agregar comida"}
+                          >
+                            <Utensils className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {getPositionBadges(player.positions)}
                       </div>
                       <Button
                         variant="ghost"
@@ -450,24 +491,29 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                     <Label htmlFor="playerName" className="text-green-700">
                       Tu Nombre
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="playerName"
-                        placeholder="Ingresa tu nombre para jugar"
-                        value={playerName}
-                        onChange={(e) => setPlayerName(e.target.value)}
-                        required
-                        className="border-green-200 focus-visible:ring-green-500"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={isSigningUp || !playerName.trim()}
-                        className="bg-green-600 hover:bg-green-700 transition-all duration-300"
-                      >
-                        {isSigningUp ? "Anotando..." : "Anotarme"}
-                      </Button>
-                    </div>
+                    <Input
+                      id="playerName"
+                      placeholder="Ingresa tu nombre para jugar"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      required
+                      className="border-green-200 focus-visible:ring-green-500"
+                    />
                   </div>
+
+                  <PositionSelector
+                    onChange={setPlayerPositions}
+                    initialPositions={playerPositions}
+                    disabled={isSigningUp}
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={isSigningUp || !playerName.trim()}
+                    className="w-full bg-green-600 hover:bg-green-700 transition-all duration-300"
+                  >
+                    {isSigningUp ? "Anotando..." : "Anotarme"}
+                  </Button>
                 </form>
               </div>
             </div>
@@ -479,32 +525,31 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   <Utensils className="mr-2 h-5 w-5 text-green-600" />
                   Anotarme Solo para Comer
                 </h3>
+
                 <form onSubmit={handleMealOnlySignup} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="mealOnlyName" className="text-green-700">
                       Tu Nombre
                     </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="mealOnlyName"
-                        placeholder="Ingresa tu nombre para comer"
-                        value={mealOnlyName}
-                        onChange={(e) => setMealOnlyName(e.target.value)}
-                        required
-                        className="border-green-200 focus-visible:ring-green-500"
-                      />
-                      <Button
-                        type="submit"
-                        disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
-                        className="bg-green-600 hover:bg-green-700 transition-all duration-300"
-                      >
-                        {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Al anotarte solo para comer, no ocuparás un lugar en la lista de jugadores.
-                    </p>
+                    <Input
+                      id="mealOnlyName"
+                      placeholder="Ingresa tu nombre para comer"
+                      value={mealOnlyName}
+                      onChange={(e) => setMealOnlyName(e.target.value)}
+                      required
+                      className="border-green-200 focus-visible:ring-green-500"
+                    />
                   </div>
+                  <Button
+                    type="submit"
+                    disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
+                    className="w-full bg-green-600 hover:bg-green-700 transition-all duration-300"
+                  >
+                    {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Al anotarte solo para comer, no ocuparás un lugar en la lista de jugadores.
+                  </p>
                 </form>
               </div>
             </div>

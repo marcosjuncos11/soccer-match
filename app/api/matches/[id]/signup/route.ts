@@ -3,7 +3,7 @@ import { sql, generateId } from "@/lib/db"
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { playerName, mealOnly = false } = await request.json()
+    const { playerName, mealOnly = false, positions = [] } = await request.json()
 
     if (!playerName) {
       return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 })
@@ -50,9 +50,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Create signup - meal-only signups always have hasMeal=true
     const signup = await sql`
-      INSERT INTO "Signup" (id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "signupTime")
-      VALUES (${signupId}, ${params.id}, ${playerName}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, NOW())
-      RETURNING id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "signupTime"
+      INSERT INTO "Signup" (id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime")
+      VALUES (${signupId}, ${params.id}, ${playerName}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${positions}, NOW())
+      RETURNING id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime"
     `
 
     return NextResponse.json(signup[0], { status: 201 })
