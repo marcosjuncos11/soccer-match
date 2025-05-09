@@ -301,8 +301,8 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="container py-10 max-w-4xl">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+    <div className="container py-6 px-2 sm:py-10 sm:px-4 max-w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
         <Button variant="outline" onClick={() => router.back()} className="flex items-center gap-2 w-full sm:w-auto">
           <ArrowLeft className="h-4 w-4" />
           Volver al Partido
@@ -323,17 +323,17 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Teams side by side with responsive grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Teams side by side with flex layout that works on all screen sizes */}
+      <div className="flex flex-row space-x-2 w-full">
         {/* Team 1 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4">
-            <CardTitle className="text-lg sm:text-xl text-green-800">Equipo 1</CardTitle>
-            <CardDescription>{team1Players.length} jugadores</CardDescription>
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 sm:p-4">
+            <CardTitle className="text-base sm:text-xl text-green-800">Equipo 1</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{team1Players.length} jugadores</CardDescription>
           </CardHeader>
-          <CardContent className="pt-3 p-3 sm:pt-4 sm:p-4">
-            <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
+          <CardContent className="p-2 sm:p-4">
+            <div className="flex flex-wrap gap-1 mb-2 sm:mb-4">
               {team1Positions.arco > 0 && (
                 <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Arco: {team1Positions.arco}
@@ -356,28 +356,26 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
               )}
             </div>
 
-            <ul className="space-y-2">
+            <ul className="space-y-1 sm:space-y-2">
               {team1Players.map((player, index) => (
                 <li
                   key={player.id}
-                  className="flex justify-between items-start p-2 sm:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex justify-between items-start p-1 sm:p-2 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col max-w-[75%]">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <span className="inline-block w-4 sm:w-6 text-green-600 font-bold text-sm sm:text-base">
-                        {index + 1}.
-                      </span>
-                      <span className="font-medium text-sm sm:text-base truncate">{player.playerName}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="inline-block w-4 text-green-600 font-bold text-xs sm:text-sm">{index + 1}.</span>
+                      <span className="font-medium text-xs sm:text-sm truncate">{player.playerName}</span>
                     </div>
-                    {getPositionBadges(player.positions)}
+                    <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1 sm:p-2"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 sm:p-1"
                     onClick={() => movePlayerToOtherTeam(player.id)}
                   >
-                    <ArrowLeftRight className="h-4 w-4" />
+                    <ArrowLeftRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </li>
               ))}
@@ -386,14 +384,14 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </Card>
 
         {/* Team 2 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden">
+        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-3 sm:p-4">
-            <CardTitle className="text-lg sm:text-xl text-green-800">Equipo 2</CardTitle>
-            <CardDescription>{team2Players.length} jugadores</CardDescription>
+          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 sm:p-4">
+            <CardTitle className="text-base sm:text-xl text-green-800">Equipo 2</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">{team2Players.length} jugadores</CardDescription>
           </CardHeader>
-          <CardContent className="pt-3 p-3 sm:pt-4 sm:p-4">
-            <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
+          <CardContent className="p-2 sm:p-4">
+            <div className="flex flex-wrap gap-1 mb-2 sm:mb-4">
               {team2Positions.arco > 0 && (
                 <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                   Arco: {team2Positions.arco}
@@ -416,28 +414,26 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
               )}
             </div>
 
-            <ul className="space-y-2">
+            <ul className="space-y-1 sm:space-y-2">
               {team2Players.map((player, index) => (
                 <li
                   key={player.id}
-                  className="flex justify-between items-start p-2 sm:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
+                  className="flex justify-between items-start p-1 sm:p-2 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col max-w-[75%]">
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <span className="inline-block w-4 sm:w-6 text-green-600 font-bold text-sm sm:text-base">
-                        {index + 1}.
-                      </span>
-                      <span className="font-medium text-sm sm:text-base truncate">{player.playerName}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="inline-block w-4 text-green-600 font-bold text-xs sm:text-sm">{index + 1}.</span>
+                      <span className="font-medium text-xs sm:text-sm truncate">{player.playerName}</span>
                     </div>
-                    {getPositionBadges(player.positions)}
+                    <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-1 sm:p-2"
+                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 sm:p-1"
                     onClick={() => movePlayerToOtherTeam(player.id)}
                   >
-                    <ArrowLeftRight className="h-4 w-4" />
+                    <ArrowLeftRight className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </li>
               ))}
