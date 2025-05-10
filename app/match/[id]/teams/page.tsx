@@ -254,35 +254,43 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
 
     // Get the team number from the droppable ID
-    const sourceTeam = Number.parseInt(source.droppableId.split("-")[1])
-    const destTeam = Number.parseInt(destination.droppableId.split("-")[1])
+    const sourceTeam = Number.parseInt(source.droppableId.replace("team-", ""))
+    const destTeam = Number.parseInt(destination.droppableId.replace("team-", ""))
 
-    // If moving between teams, use the existing function
-    if (sourceTeam !== destTeam) {
-      const playerToMove = teamPlayers.find(
-        (p) => p.team === sourceTeam && teamPlayers.filter((tp) => tp.team === sourceTeam).indexOf(p) === source.index,
-      )
-      if (playerToMove) {
-        movePlayerToOtherTeam(playerToMove.id)
-      }
-      return
-    }
-
-    // Reordering within the same team
-    const teamPlayersArray = [...teamPlayers]
-    const teamFilteredPlayers = teamPlayersArray.filter((p) => p.team === sourceTeam)
+    // Create a copy of the team players
+    const newTeamPlayers = [...teamPlayers]
 
     // Get the player that was dragged
-    const [movedPlayer] = teamFilteredPlayers.splice(source.index, 1)
+    const team1Players = newTeamPlayers.filter((p) => p.team === 1)
+    const team2Players = newTeamPlayers.filter((p) => p.team === 2)
 
-    // Insert the player at the new position
-    teamFilteredPlayers.splice(destination.index, 0, movedPlayer)
+    let movedPlayer: TeamPlayer | undefined
 
-    // Reconstruct the full players array with the new order
-    const otherTeamPlayers = teamPlayersArray.filter((p) => p.team !== sourceTeam)
-    const newTeamPlayers = [...otherTeamPlayers, ...teamFilteredPlayers]
+    // If moving between teams
+    if (sourceTeam !== destTeam) {
+      if (sourceTeam === 1) {
+        movedPlayer = team1Players[source.index]
+      } else {
+        movedPlayer = team2Players[source.index]
+      }
 
-    setTeamPlayers(newTeamPlayers)
+      if (movedPlayer) {
+        // Update the team
+        movedPlayer.team = destTeam
+      }
+    } else {
+      // Reordering within the same team
+      const teamPlayers = sourceTeam === 1 ? team1Players : team2Players
+
+      // Remove the player from the current position
+      const [removed] = teamPlayers.splice(source.index, 1)
+
+      // Insert at the new position
+      teamPlayers.splice(destination.index, 0, removed)
+    }
+
+    // Update the state with the new order
+    setTeamPlayers([...newTeamPlayers.filter((p) => p.team !== 1 && p.team !== 2), ...team1Players, ...team2Players])
   }
 
   // Helper function to display positions
@@ -416,45 +424,50 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
               <Droppable droppableId="team-1">
                 {(provided) => (
-                  <ul className="space-y-1 md:space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                  <ul
+                    className="space-y-1 md:space-y-3 min-h-[50px]"
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
                     {team1Players.map((player, index) => (
                       <Draggable key={player.id} draggableId={player.id} index={index}>
                         {(provided, snapshot) => (
                           <li
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={`flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
+                            style={{
+                              ...provided.draggableProps.style,
+                              // Ensure the item doesn't change size when dragging
+                              width: snapshot.isDragging ? provided.draggableProps.style?.width : "100%",
+                            }}
+                            className={`flex items-center p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
                               snapshot.isDragging ? "shadow-lg border-green-300 bg-green-50" : "hover:shadow-md"
                             }`}
                           >
-                            <div className="flex items-center w-full">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-                              >
-                                <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
-                              </div>
-                              <div className="flex flex-col max-w-[65%] md:max-w-[75%]">
-                                <div className="flex items-center gap-1 md:gap-2">
-                                  <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
-                                    {index + 1}.
-                                  </span>
-                                  <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
-                                  {player.hasMeal && <span className="text-xs md:text-sm">🍖</span>}
-                                </div>
-                                <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
-                              </div>
-                              <div className="ml-auto">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
-                                  onClick={() => movePlayerToOtherTeam(player.id)}
-                                >
-                                  <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
-                                </Button>
-                              </div>
+                            <div
+                              {...provided.dragHandleProps}
+                              className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0"
+                            >
+                              <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
                             </div>
+                            <div className="flex flex-col flex-grow min-w-0">
+                              <div className="flex items-center gap-1 md:gap-2">
+                                <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base flex-shrink-0">
+                                  {index + 1}.
+                                </span>
+                                <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                {player.hasMeal && <span className="text-xs md:text-sm flex-shrink-0">🍖</span>}
+                              </div>
+                              <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2 ml-auto flex-shrink-0"
+                              onClick={() => movePlayerToOtherTeam(player.id)}
+                            >
+                              <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
+                            </Button>
                           </li>
                         )}
                       </Draggable>
@@ -499,45 +512,50 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
               <Droppable droppableId="team-2">
                 {(provided) => (
-                  <ul className="space-y-1 md:space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                  <ul
+                    className="space-y-1 md:space-y-3 min-h-[50px]"
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
                     {team2Players.map((player, index) => (
                       <Draggable key={player.id} draggableId={player.id} index={index}>
                         {(provided, snapshot) => (
                           <li
                             ref={provided.innerRef}
                             {...provided.draggableProps}
-                            className={`flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
+                            style={{
+                              ...provided.draggableProps.style,
+                              // Ensure the item doesn't change size when dragging
+                              width: snapshot.isDragging ? provided.draggableProps.style?.width : "100%",
+                            }}
+                            className={`flex items-center p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
                               snapshot.isDragging ? "shadow-lg border-green-300 bg-green-50" : "hover:shadow-md"
                             }`}
                           >
-                            <div className="flex items-center w-full">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-                              >
-                                <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
-                              </div>
-                              <div className="flex flex-col max-w-[65%] md:max-w-[75%]">
-                                <div className="flex items-center gap-1 md:gap-2">
-                                  <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
-                                    {index + 1}.
-                                  </span>
-                                  <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
-                                  {player.hasMeal && <span className="text-xs md:text-sm">🍖</span>}
-                                </div>
-                                <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
-                              </div>
-                              <div className="ml-auto">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
-                                  onClick={() => movePlayerToOtherTeam(player.id)}
-                                >
-                                  <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
-                                </Button>
-                              </div>
+                            <div
+                              {...provided.dragHandleProps}
+                              className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing flex-shrink-0"
+                            >
+                              <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
                             </div>
+                            <div className="flex flex-col flex-grow min-w-0">
+                              <div className="flex items-center gap-1 md:gap-2">
+                                <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base flex-shrink-0">
+                                  {index + 1}.
+                                </span>
+                                <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                {player.hasMeal && <span className="text-xs md:text-sm flex-shrink-0">🍖</span>}
+                              </div>
+                              <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2 ml-auto flex-shrink-0"
+                              onClick={() => movePlayerToOtherTeam(player.id)}
+                            >
+                              <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
+                            </Button>
                           </li>
                         )}
                       </Draggable>
