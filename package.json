@@ -75,6 +75,7 @@
     "postgres": "latest",
     "prisma": "latest",
     "react": "^19",
+    "react-beautiful-dnd": "latest",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
     "react-hook-form": "^7.54.1",

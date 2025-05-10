@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2 } from "lucide-react"
+import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2, GripVertical } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd"
 
 interface Player {
   id: string
@@ -242,6 +243,48 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
   }
 
+  // Handle drag and drop
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source } = result
+
+    // If dropped outside a droppable area
+    if (!destination) return
+
+    // If dropped in the same position
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return
+
+    // Get the team number from the droppable ID
+    const sourceTeam = Number.parseInt(source.droppableId.split("-")[1])
+    const destTeam = Number.parseInt(destination.droppableId.split("-")[1])
+
+    // If moving between teams, use the existing function
+    if (sourceTeam !== destTeam) {
+      const playerToMove = teamPlayers.find(
+        (p) => p.team === sourceTeam && teamPlayers.filter((tp) => tp.team === sourceTeam).indexOf(p) === source.index,
+      )
+      if (playerToMove) {
+        movePlayerToOtherTeam(playerToMove.id)
+      }
+      return
+    }
+
+    // Reordering within the same team
+    const teamPlayersArray = [...teamPlayers]
+    const teamFilteredPlayers = teamPlayersArray.filter((p) => p.team === sourceTeam)
+
+    // Get the player that was dragged
+    const [movedPlayer] = teamFilteredPlayers.splice(source.index, 1)
+
+    // Insert the player at the new position
+    teamFilteredPlayers.splice(destination.index, 0, movedPlayer)
+
+    // Reconstruct the full players array with the new order
+    const otherTeamPlayers = teamPlayersArray.filter((p) => p.team !== sourceTeam)
+    const newTeamPlayers = [...otherTeamPlayers, ...teamFilteredPlayers]
+
+    setTeamPlayers(newTeamPlayers)
+  }
+
   // Helper function to display positions
   const getPositionBadges = (positions: string[]) => {
     if (!positions || positions.length === 0) return null
@@ -333,128 +376,180 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* Teams container - different styles for mobile and desktop */}
-      <div className="flex flex-row space-x-2 md:space-x-6 w-full">
-        {/* Team 1 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 md:p-6">
-            <CardTitle className="text-base md:text-2xl text-green-800">Equipo 1</CardTitle>
-            <CardDescription className="text-xs md:text-base">{team1Players.length} jugadores</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6">
-            <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-4">
-              {team1Positions.arco > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Arco: {team1Positions.arco}
-                </Badge>
-              )}
-              {team1Positions.defensa > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Defensa: {team1Positions.defensa}
-                </Badge>
-              )}
-              {team1Positions.medio > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Medio: {team1Positions.medio}
-                </Badge>
-              )}
-              {team1Positions.delantero > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Delantero: {team1Positions.delantero}
-                </Badge>
-              )}
-            </div>
-
-            <ul className="space-y-1 md:space-y-3">
-              {team1Players.map((player, index) => (
-                <li
-                  key={player.id}
-                  className="flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col max-w-[75%] md:max-w-[85%]">
-                    <div className="flex items-center gap-1 md:gap-2">
-                      <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
-                        {index + 1}.
-                      </span>
-                      <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
-                    </div>
-                    <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
-                    onClick={() => movePlayerToOtherTeam(player.id)}
-                  >
-                    <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Team 2 */}
-        <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
-          <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 md:p-6">
-            <CardTitle className="text-base md:text-2xl text-green-800">Equipo 2</CardTitle>
-            <CardDescription className="text-xs md:text-base">{team2Players.length} jugadores</CardDescription>
-          </CardHeader>
-          <CardContent className="p-2 md:p-6">
-            <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-4">
-              {team2Positions.arco > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Arco: {team2Positions.arco}
-                </Badge>
-              )}
-              {team2Positions.defensa > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Defensa: {team2Positions.defensa}
-                </Badge>
-              )}
-              {team2Positions.medio > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Medio: {team2Positions.medio}
-                </Badge>
-              )}
-              {team2Positions.delantero > 0 && (
-                <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
-                  Delantero: {team2Positions.delantero}
-                </Badge>
-              )}
-            </div>
-
-            <ul className="space-y-1 md:space-y-3">
-              {team2Players.map((player, index) => (
-                <li
-                  key={player.id}
-                  className="flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex flex-col max-w-[75%] md:max-w-[85%]">
-                    <div className="flex items-center gap-1 md:gap-2">
-                      <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
-                        {index + 1}.
-                      </span>
-                      <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
-                    </div>
-                    <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
-                    onClick={() => movePlayerToOtherTeam(player.id)}
-                  >
-                    <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+      <div className="mb-4 bg-green-50 p-3 rounded-lg border border-green-200 text-center text-sm text-green-700">
+        <p>Arrastra y suelta los jugadores para reordenarlos dentro del mismo equipo</p>
       </div>
+
+      {/* Teams container with drag and drop */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="flex flex-row space-x-2 md:space-x-6 w-full">
+          {/* Team 1 */}
+          <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
+            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 md:p-6">
+              <CardTitle className="text-base md:text-2xl text-green-800">Equipo 1</CardTitle>
+              <CardDescription className="text-xs md:text-base">{team1Players.length} jugadores</CardDescription>
+            </CardHeader>
+            <CardContent className="p-2 md:p-6">
+              <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-4">
+                {team1Positions.arco > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Arco: {team1Positions.arco}
+                  </Badge>
+                )}
+                {team1Positions.defensa > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Defensa: {team1Positions.defensa}
+                  </Badge>
+                )}
+                {team1Positions.medio > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Medio: {team1Positions.medio}
+                  </Badge>
+                )}
+                {team1Positions.delantero > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Delantero: {team1Positions.delantero}
+                  </Badge>
+                )}
+              </div>
+
+              <Droppable droppableId="team-1">
+                {(provided) => (
+                  <ul className="space-y-1 md:space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                    {team1Players.map((player, index) => (
+                      <Draggable key={player.id} draggableId={player.id} index={index}>
+                        {(provided, snapshot) => (
+                          <li
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
+                              snapshot.isDragging ? "shadow-lg border-green-300 bg-green-50" : "hover:shadow-md"
+                            }`}
+                          >
+                            <div className="flex items-center w-full">
+                              <div
+                                {...provided.dragHandleProps}
+                                className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                              >
+                                <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
+                              </div>
+                              <div className="flex flex-col max-w-[65%] md:max-w-[75%]">
+                                <div className="flex items-center gap-1 md:gap-2">
+                                  <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
+                                    {index + 1}.
+                                  </span>
+                                  <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                  {player.hasMeal && <span className="text-xs md:text-sm">🍖</span>}
+                                </div>
+                                <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                              </div>
+                              <div className="ml-auto">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
+                                  onClick={() => movePlayerToOtherTeam(player.id)}
+                                >
+                                  <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </li>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </ul>
+                )}
+              </Droppable>
+            </CardContent>
+          </Card>
+
+          {/* Team 2 */}
+          <Card className="border-green-200 shadow-lg animate-fade-in overflow-hidden w-1/2">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-green-600"></div>
+            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 p-2 md:p-6">
+              <CardTitle className="text-base md:text-2xl text-green-800">Equipo 2</CardTitle>
+              <CardDescription className="text-xs md:text-base">{team2Players.length} jugadores</CardDescription>
+            </CardHeader>
+            <CardContent className="p-2 md:p-6">
+              <div className="flex flex-wrap gap-1 md:gap-2 mb-2 md:mb-4">
+                {team2Positions.arco > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Arco: {team2Positions.arco}
+                  </Badge>
+                )}
+                {team2Positions.defensa > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Defensa: {team2Positions.defensa}
+                  </Badge>
+                )}
+                {team2Positions.medio > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Medio: {team2Positions.medio}
+                  </Badge>
+                )}
+                {team2Positions.delantero > 0 && (
+                  <Badge variant="outline" className="text-xs md:text-sm bg-green-50 text-green-700 border-green-200">
+                    Delantero: {team2Positions.delantero}
+                  </Badge>
+                )}
+              </div>
+
+              <Droppable droppableId="team-2">
+                {(provided) => (
+                  <ul className="space-y-1 md:space-y-3" {...provided.droppableProps} ref={provided.innerRef}>
+                    {team2Players.map((player, index) => (
+                      <Draggable key={player.id} draggableId={player.id} index={index}>
+                        {(provided, snapshot) => (
+                          <li
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`flex justify-between items-start p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
+                              snapshot.isDragging ? "shadow-lg border-green-300 bg-green-50" : "hover:shadow-md"
+                            }`}
+                          >
+                            <div className="flex items-center w-full">
+                              <div
+                                {...provided.dragHandleProps}
+                                className="mr-1 md:mr-2 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
+                              >
+                                <GripVertical className="h-3 w-3 md:h-4 md:w-4" />
+                              </div>
+                              <div className="flex flex-col max-w-[65%] md:max-w-[75%]">
+                                <div className="flex items-center gap-1 md:gap-2">
+                                  <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base">
+                                    {index + 1}.
+                                  </span>
+                                  <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                  {player.hasMeal && <span className="text-xs md:text-sm">🍖</span>}
+                                </div>
+                                <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                              </div>
+                              <div className="ml-auto">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-0 md:p-2"
+                                  onClick={() => movePlayerToOtherTeam(player.id)}
+                                >
+                                  <ArrowLeftRight className="h-3 w-3 md:h-5 md:w-5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </li>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </ul>
+                )}
+              </Droppable>
+            </CardContent>
+          </Card>
+        </div>
+      </DragDropContext>
     </div>
   )
 }
