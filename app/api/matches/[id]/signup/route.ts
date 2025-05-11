@@ -46,13 +46,24 @@ export async function POST(request: Request, { params }: { params: { id: string 
       isWaiting = Number.parseInt(currentPlayers[0].count) >= match[0].playerLimit
     }
 
+    // Get the highest order value for this category (regular, waiting, or meal-only)
+    const maxOrder = await sql`
+      SELECT MAX("order") as max_order FROM "Signup"
+      WHERE "matchId" = ${params.id}
+      AND "isWaiting" = ${isWaiting}
+      AND "mealOnly" = ${mealOnly}
+    `
+
+    // Calculate the next order value
+    const nextOrder = maxOrder[0].max_order ? Number.parseInt(maxOrder[0].max_order) + 1 : 1
+
     const signupId = generateId()
 
     // Create signup - meal-only signups always have hasMeal=true
     const signup = await sql`
-      INSERT INTO "Signup" (id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime")
-      VALUES (${signupId}, ${params.id}, ${playerName}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${positions}, NOW())
-      RETURNING id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime"
+      INSERT INTO "Signup" (id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order")
+      VALUES (${signupId}, ${params.id}, ${playerName}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${positions}, NOW(), ${nextOrder})
+      RETURNING id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order"
     `
 
     return NextResponse.json(signup[0], { status: 201 })
@@ -98,7 +109,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         WHERE "matchId" = ${params.id} 
         AND "isWaiting" = true 
         AND "mealOnly" = false
-        ORDER BY "signupTime" ASC 
+        ORDER BY "order" ASC 
         LIMIT 1
       `
 

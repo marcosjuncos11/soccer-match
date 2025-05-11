@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound, UserPlus } from "lucide-react"
+import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound, UserPlus, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Player {
   id: string
@@ -33,6 +34,7 @@ interface Player {
   hasMeal: boolean
   mealOnly: boolean
   positions: string[]
+  order?: number
 }
 
 interface Match {
@@ -61,6 +63,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
   const [editingPositions, setEditingPositions] = useState<string[]>([])
   const [isUpdatingPositions, setIsUpdatingPositions] = useState(false)
+  const [isMovingPlayer, setIsMovingPlayer] = useState<string | null>(null)
 
   // Ref for the signup section
   const signupSectionRef = useRef<HTMLDivElement>(null)
@@ -88,15 +91,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
     // Set up auto-refresh every 5 seconds
     const intervalId = setInterval(() => {
-      // Only refresh if not editing positions
-      if (!editingPlayerId) {
+      // Only refresh if not editing positions or moving players
+      if (!editingPlayerId && !isMovingPlayer) {
         fetchMatch()
       }
     }, 5000)
 
     // Clean up interval on component unmount
     return () => clearInterval(intervalId)
-  }, [fetchMatch, editingPlayerId])
+  }, [fetchMatch, editingPlayerId, isMovingPlayer])
 
   const scrollToSignup = () => {
     signupSectionRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -211,6 +214,30 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     } catch (error) {
       console.error("Error updating meal status:", error)
       alert("Error al actualizar el estado de la comida. Por favor, inténtalo de nuevo.")
+    }
+  }
+
+  const handleMovePlayerUp = async (playerId: string) => {
+    setIsMovingPlayer(playerId)
+    try {
+      const response = await fetch(`/api/matches/${params.id}/player/order`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ playerId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error al mover al jugador")
+      }
+
+      await fetchMatch()
+    } catch (error) {
+      console.error("Error moving player:", error)
+      alert("Error al mover al jugador. Por favor, inténtalo de nuevo.")
+    } finally {
+      setIsMovingPlayer(null)
     }
   }
 
@@ -333,6 +360,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
+  // Sort players by order
+  const sortPlayersByOrder = (players: Player[]) => {
+    return [...players].sort((a, b) => {
+      // If order is not defined, use signup time
+      const orderA = a.order !== undefined ? a.order : 999999
+      const orderB = b.order !== undefined ? b.order : 999999
+      return orderA - orderB
+    })
+  }
+
   if (isLoading) {
     return (
       <div className="container py-10 text-center">
@@ -361,9 +398,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
-  const mainListPlayers = match.signups.filter((player) => !player.isWaiting && !player.mealOnly)
-  const waitingListPlayers = match.signups.filter((player) => player.isWaiting && !player.mealOnly)
-  const mealOnlyPlayers = match.signups.filter((player) => player.mealOnly)
+  // Get players and sort them by order
+  let mainListPlayers = match.signups.filter((player) => !player.isWaiting && !player.mealOnly)
+  let waitingListPlayers = match.signups.filter((player) => player.isWaiting && !player.mealOnly)
+  let mealOnlyPlayers = match.signups.filter((player) => player.mealOnly)
+
+  // Sort players by order
+  mainListPlayers = sortPlayersByOrder(mainListPlayers)
+  waitingListPlayers = sortPlayersByOrder(waitingListPlayers)
+  mealOnlyPlayers = sortPlayersByOrder(mealOnlyPlayers)
+
   const totalMeals = match.signups.filter((player) => player.hasMeal || player.mealOnly).length
 
   return (
@@ -490,6 +534,31 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => handleMovePlayerUp(player.id)}
+                                      disabled={isMovingPlayer === player.id || index === 0}
+                                      className={`p-1.5 rounded-full transition-colors ${
+                                        index === 0
+                                          ? "text-gray-300 cursor-not-allowed"
+                                          : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                                      }`}
+                                      aria-label="Mover arriba"
+                                    >
+                                      {isMovingPlayer === player.id ? (
+                                        <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                      ) : (
+                                        <ChevronUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Mover arriba</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                             {getPositionBadges(player.positions)}
                           </div>
@@ -571,6 +640,31 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => handleMovePlayerUp(player.id)}
+                                      disabled={isMovingPlayer === player.id || index === 0}
+                                      className={`p-1.5 rounded-full transition-colors ${
+                                        index === 0
+                                          ? "text-gray-300 cursor-not-allowed"
+                                          : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                                      }`}
+                                      aria-label="Mover arriba"
+                                    >
+                                      {isMovingPlayer === player.id ? (
+                                        <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                      ) : (
+                                        <ChevronUp className="h-4 w-4" />
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Mover arriba</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                             {getPositionBadges(player.positions)}
                           </div>
@@ -614,6 +708,31 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       <span className="bg-green-500 text-white p-2 rounded-full shadow-md">
                         <Utensils className="h-5 w-5" />
                       </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() => handleMovePlayerUp(player.id)}
+                              disabled={isMovingPlayer === player.id || index === 0}
+                              className={`p-1.5 rounded-full transition-colors ${
+                                index === 0
+                                  ? "text-gray-300 cursor-not-allowed"
+                                  : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                              }`}
+                              aria-label="Mover arriba"
+                            >
+                              {isMovingPlayer === player.id ? (
+                                <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <ChevronUp className="h-4 w-4" />
+                              )}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mover arriba</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                     <Button
                       variant="ghost"

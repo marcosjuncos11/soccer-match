@@ -22,10 +22,10 @@ importers:
         version: 3.9.1(react-hook-form@7.54.1(react@19.0.0))
       '@libsql/client':
         specifier: latest
-        version: 0.15.4(bufferutil@4.0.9)
+        version: 0.15.5(bufferutil@4.0.9)
       '@libsql/client-wasm':
         specifier: latest
-        version: 0.15.4
+        version: 0.15.5
       '@neondatabase/serverless':
         specifier: latest
         version: 1.0.0
@@ -163,7 +163,7 @@ importers:
         version: 4.1.0
       drizzle-orm:
         specifier: latest
-        version: 0.43.1(0b0fde333576233b7e94a7bed1f93dd9)
+        version: 0.43.1(25ebbe976b30d3ddddee1c3e8f5b385e)
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.0.0)
@@ -206,6 +206,9 @@ importers:
       react:
         specifier: ^19
         version: 19.0.0
+      react-beautiful-dnd:
+        specifier: latest
+        version: 13.1.1(react-dom@19.0.0(react@19.0.0))(react-native@0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0)
       react-day-picker:
         specifier: 8.10.1
         version: 8.10.1(date-fns@4.1.0)(react@19.0.0)
@@ -1296,16 +1299,16 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@libsql/client-wasm@0.15.4':
-    resolution: {integrity: sha512-l83BkBHRonZz1oZioSn7Sz7TNW5uWUM531ozG1PKZ7fGxUCLJa69/9Gs1bX2OwIt/NJ0H0OPCdUPLx2CJBqJfw==}
+  '@libsql/client-wasm@0.15.5':
+    resolution: {integrity: sha512-JPjnGnLGQu36SPDskXSgyLoVBA0/IgcEC52MKnIa7/rKGIY1I4WKMIYrl2hkbw7+xYzWrGk6Vr8AZ9PeNEtgVA==}
     bundledDependencies:
       - '@libsql/libsql-wasm-experimental'
 
-  '@libsql/client@0.15.4':
-    resolution: {integrity: sha512-m8a7giWlhLdfKVIZFd3UlBptWTS+H0toSOL09BxbqzBeFHwuVC+5ewyi4LMBxoy2TLNQGE4lO8cwpsTWmu695w==}
+  '@libsql/client@0.15.5':
+    resolution: {integrity: sha512-bbTpLdIMH1GcJfvNoh/m0HlHV/RmCz8tt/QCld6pM0C0ttZTsVyZ+PLn42/UxEvyTe2QcNa9w8qHr8NmwKV+1g==}
 
-  '@libsql/core@0.15.4':
-    resolution: {integrity: sha512-NMvh6xnn3vrcd7DNehj0HiJcRWB2a8hHhJUTkOBej3Pf3KB21HOmdOUjXxJ5pGbjWXh4ezQBmHtF5ozFhocXaA==}
+  '@libsql/core@0.15.5':
+    resolution: {integrity: sha512-18hhESfHuOdBNAXIAqZbXfe1xskpOn+vEuYIbWgtbzq7On8lGBA1FASQ8LpzBsP+Xv8fK2JoiDKIFDTc8jQ3mg==}
 
   '@libsql/darwin-arm64@0.5.9':
     resolution: {integrity: sha512-gxvDYfp54CmsjfJ6o3XFyRS+FEikrDMiPwTD0eKUJHdwfMlO//C/TTr5gcLB7LHAaknaxS8w4XEMrL/MP2UQ7A==}
@@ -2665,6 +2668,9 @@ packages:
   '@types/graceful-fs@4.1.9':
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
 
+  '@types/hoist-non-react-statics@3.3.6':
+    resolution: {integrity: sha512-lPByRJUer/iN/xa4qpyL0qmL11DqNW81iU/IG1S3uvRUq4oKagz8VCxZjiWkumgt66YT3vOdDgZ0o32sGKtCEw==}
+
   '@types/istanbul-lib-coverage@2.0.6':
     resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
@@ -2688,6 +2694,9 @@ packages:
 
   '@types/react-dom@19.0.0':
     resolution: {integrity: sha512-1KfiQKsH1o00p9m5ag12axHQSb3FOU9H20UTrujVSkNhuCrRHiQWFqgEnTNK5ZNfnzZv8UWrnXVqCmCF9fgY3w==}
+
+  '@types/react-redux@7.1.34':
+    resolution: {integrity: sha512-GdFaVjEbYv4Fthm2ZLvj1VSCedV7TqE5y1kNwnjSdBOTXuRSgowux6J8TAct15T3CKBr63UMk+2CO7ilRhyrAQ==}
 
   '@types/react@19.0.0':
     resolution: {integrity: sha512-MY3oPudxvMYyesqs/kW1Bh8y9VqSmf+tzqw3ae8a9DZW68pUe3zAdHeI1jc6iAysuRdACnVknHP8AhwD4/dxtg==}
@@ -3169,6 +3178,9 @@ packages:
   crypto-random-string@2.0.0:
     resolution: {integrity: sha512-v1plID3y9r/lPhviJ1wrXpLeyUIGAZ2SHNYTEapm7/8A9nLPoyvVp3RK/EPFqn5kEznyWgYZNsRtYYIWbuG8KA==}
     engines: {node: '>=8'}
+
+  css-box-model@1.2.1:
+    resolution: {integrity: sha512-a7Vr4Q/kd/aw96bnJG332W9V9LkJO69JRcaCYDUqjp6/z0w6VcZjgAcTbgFxEPfBgdnAwlh3iwu+hLopa+flJw==}
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -3781,6 +3793,9 @@ packages:
 
   hermes-parser@0.28.1:
     resolution: {integrity: sha512-nf8o+hE8g7UJWParnccljHumE9Vlq8F7MqIdeahl+4x0tvCUJYRrT0L7h0MMg/X9YJmkNwsfbaNNrzPtFXOscg==}
+
+  hoist-non-react-statics@3.3.2:
+    resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
 
   hosted-git-info@7.0.2:
     resolution: {integrity: sha512-puUZAUKT5m8Zzvs72XWy3HtvVbTWljRE66cP60bxJzAqf2DgICo7lYTY2IHUmLnNpjYvw5bvmoHvPc0QO2a62w==}
@@ -4835,6 +4850,9 @@ packages:
   queue@6.0.2:
     resolution: {integrity: sha512-iHZWu+q3IdFZFX36ro/lKBkSvfkztY5Y7HMiPlOUjhupPcG2JMfst2KKEpu5XndviX/3UhFbRngUPNKtgvtZiA==}
 
+  raf-schd@4.0.3:
+    resolution: {integrity: sha512-tQkJl2GRWh83ui2DiPTJz9wEiMN20syf+5oKfB03yYP7ioZcJwsIK8FjrtLwH1m7C7e+Tt2yYBlrOpdT+dyeIQ==}
+
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
     engines: {node: '>= 0.6'}
@@ -4842,6 +4860,13 @@ packages:
   rc@1.2.8:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
     hasBin: true
+
+  react-beautiful-dnd@13.1.1:
+    resolution: {integrity: sha512-0Lvs4tq2VcrEjEgDXHjT98r+63drkKEgqyxdA7qD3mvKwga6a5SscbdLPO2IExotU1jW8L0Ksdl0Cj2AF67nPQ==}
+    deprecated: 'react-beautiful-dnd is now deprecated. Context and options: https://github.com/atlassian/react-beautiful-dnd/issues/2672'
+    peerDependencies:
+      react: ^16.8.5 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.5 || ^17.0.0 || ^18.0.0
 
   react-day-picker@8.10.1:
     resolution: {integrity: sha512-TMx7fNbhLk15eqcMt+7Z7S2KF7mfTId/XJDjKE8f+IUcFn0l08/kI4FiYTL/0yuOLmEcbR4Fwe3GJf/NiiMnPA==}
@@ -4866,6 +4891,9 @@ packages:
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
+  react-is@17.0.2:
+    resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
+
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
@@ -4884,6 +4912,18 @@ packages:
       react: ^19.0.0
     peerDependenciesMeta:
       '@types/react':
+        optional: true
+
+  react-redux@7.2.9:
+    resolution: {integrity: sha512-Gx4L3uM182jEEayZfRbI/G11ZpYdNAnBs70lFVMNdHJI76XYtR+7m0MN+eAs7UHBPhWXcnFPaS+9owSCJQHNpQ==}
+    peerDependencies:
+      react: ^16.8.3 || ^17 || ^18
+      react-dom: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
         optional: true
 
   react-refresh@0.14.2:
@@ -4966,6 +5006,9 @@ packages:
   rechoir@0.8.0:
     resolution: {integrity: sha512-/vxpCXddiX8NGfGO/mTafwjq4aFa/71pvamip0++IQk3zG8cbCj0fifNPrjjF1XMXUne91jL9OoxmdykoEtifQ==}
     engines: {node: '>= 10.13.0'}
+
+  redux@4.2.1:
+    resolution: {integrity: sha512-LAUYz4lc+Do8/g7aeRa8JkyDErK6ekstQaqWQrNRW//MY1TvCEpMtpTWvlQ+FPbWCx+Xixu/6SHt5N0HR+SB4w==}
 
   regenerate-unicode-properties@10.2.0:
     resolution: {integrity: sha512-DqHn3DwbmmPVzeKj9woBadqmXxLvQoQIwu7nopMc72ztvxVmVk2SBhSnx67zuye5TP+lJsb/TBQsjLKhnDf3MA==}
@@ -5448,6 +5491,11 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  use-memo-one@1.1.3:
+    resolution: {integrity: sha512-g66/K7ZQGYrI6dy8GLpVcMsBp4s17xNkYJVSMvTEevGy3nDxHOfE6z8BVE22+5G5x7t3+bhzrlTDB7ObrEE0cQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   use-sidecar@1.1.3:
     resolution: {integrity: sha512-Fedw0aZvkhynoPYlA5WXrMCAMm+nSWdZt6lzJQ7Ok8S6Q+VsHmHpRWndVRJ8Be0ZbkfPc5LRYH+5XrzXcEeLRQ==}
@@ -7108,14 +7156,14 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@libsql/client-wasm@0.15.4':
+  '@libsql/client-wasm@0.15.5':
     dependencies:
-      '@libsql/core': 0.15.4
+      '@libsql/core': 0.15.5
       js-base64: 3.7.7
 
-  '@libsql/client@0.15.4(bufferutil@4.0.9)':
+  '@libsql/client@0.15.5(bufferutil@4.0.9)':
     dependencies:
-      '@libsql/core': 0.15.4
+      '@libsql/core': 0.15.5
       '@libsql/hrana-client': 0.7.0(bufferutil@4.0.9)
       js-base64: 3.7.7
       libsql: 0.5.9
@@ -7124,7 +7172,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@libsql/core@0.15.4':
+  '@libsql/core@0.15.5':
     dependencies:
       js-base64: 3.7.7
 
@@ -8632,6 +8680,11 @@ snapshots:
     dependencies:
       '@types/node': 22.15.17
 
+  '@types/hoist-non-react-statics@3.3.6':
+    dependencies:
+      '@types/react': 19.0.0
+      hoist-non-react-statics: 3.3.2
+
   '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/istanbul-lib-report@3.0.3':
@@ -8665,6 +8718,13 @@ snapshots:
   '@types/react-dom@19.0.0':
     dependencies:
       '@types/react': 19.0.0
+
+  '@types/react-redux@7.1.34':
+    dependencies:
+      '@types/hoist-non-react-statics': 3.3.6
+      '@types/react': 19.0.0
+      hoist-non-react-statics: 3.3.2
+      redux: 4.2.1
 
   '@types/react@19.0.0':
     dependencies:
@@ -9245,6 +9305,10 @@ snapshots:
 
   crypto-random-string@2.0.0: {}
 
+  css-box-model@1.2.1:
+    dependencies:
+      tiny-invariant: 1.3.3
+
   cssesc@3.0.0: {}
 
   csstype@3.1.3: {}
@@ -9355,13 +9419,13 @@ snapshots:
 
   dotenv@16.4.7: {}
 
-  drizzle-orm@0.43.1(0b0fde333576233b7e94a7bed1f93dd9):
+  drizzle-orm@0.43.1(25ebbe976b30d3ddddee1c3e8f5b385e):
     optionalDependencies:
       '@aws-sdk/client-rds-data': 3.806.0
       '@cloudflare/workers-types': 4.20250510.0
       '@electric-sql/pglite': 0.3.0
-      '@libsql/client': 0.15.4(bufferutil@4.0.9)
-      '@libsql/client-wasm': 0.15.4
+      '@libsql/client': 0.15.5(bufferutil@4.0.9)
+      '@libsql/client-wasm': 0.15.5
       '@neondatabase/serverless': 1.0.0
       '@op-engineering/op-sqlite': 13.0.1(react-native@0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0)
       '@opentelemetry/api': 1.9.0
@@ -9767,6 +9831,10 @@ snapshots:
   hermes-parser@0.28.1:
     dependencies:
       hermes-estree: 0.28.1
+
+  hoist-non-react-statics@3.3.2:
+    dependencies:
+      react-is: 16.13.1
 
   hosted-git-info@7.0.2:
     dependencies:
@@ -10927,6 +10995,8 @@ snapshots:
     dependencies:
       inherits: 2.0.4
 
+  raf-schd@4.0.3: {}
+
   range-parser@1.2.1: {}
 
   rc@1.2.8:
@@ -10935,6 +11005,20 @@ snapshots:
       ini: 1.3.8
       minimist: 1.2.8
       strip-json-comments: 2.0.1
+
+  react-beautiful-dnd@13.1.1(react-dom@19.0.0(react@19.0.0))(react-native@0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      '@babel/runtime': 7.27.1
+      css-box-model: 1.2.1
+      memoize-one: 5.2.1
+      raf-schd: 4.0.3
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+      react-redux: 7.2.9(react-dom@19.0.0(react@19.0.0))(react-native@0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0)
+      redux: 4.2.1
+      use-memo-one: 1.1.3(react@19.0.0)
+    transitivePeerDependencies:
+      - react-native
 
   react-day-picker@8.10.1(date-fns@4.1.0)(react@19.0.0):
     dependencies:
@@ -10959,6 +11043,8 @@ snapshots:
       react: 19.0.0
 
   react-is@16.13.1: {}
+
+  react-is@17.0.2: {}
 
   react-is@18.3.1: {}
 
@@ -11014,6 +11100,19 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  react-redux@7.2.9(react-dom@19.0.0(react@19.0.0))(react-native@0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      '@babel/runtime': 7.27.1
+      '@types/react-redux': 7.1.34
+      hoist-non-react-statics: 3.3.2
+      loose-envify: 1.4.0
+      prop-types: 15.8.1
+      react: 19.0.0
+      react-is: 17.0.2
+    optionalDependencies:
+      react-dom: 19.0.0(react@19.0.0)
+      react-native: 0.79.2(@babel/core@7.27.1)(@types/react@19.0.0)(bufferutil@4.0.9)(react@19.0.0)
 
   react-refresh@0.14.2: {}
 
@@ -11102,6 +11201,10 @@ snapshots:
   rechoir@0.8.0:
     dependencies:
       resolve: 1.22.10
+
+  redux@4.2.1:
+    dependencies:
+      '@babel/runtime': 7.27.1
 
   regenerate-unicode-properties@10.2.0:
     dependencies:
@@ -11623,6 +11726,10 @@ snapshots:
       tslib: 2.8.1
     optionalDependencies:
       '@types/react': 19.0.0
+
+  use-memo-one@1.1.3(react@19.0.0):
+    dependencies:
+      react: 19.0.0
 
   use-sidecar@1.1.3(@types/react@19.0.0)(react@19.0.0):
     dependencies:
