@@ -319,7 +319,7 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
     // Add AI analysis if available
     if (activeTab === "ai" && aiTeamData) {
-      message += `🤖 *EQUIPOS GENERADOS CON GROQ IA*\n`
+      message += `🤖 *EQUIPOS GENERADOS CON IA*\n`
       message += `Balance General: ${aiTeamData.balanceAnalysis.overallBalance}/10\n\n`
     }
 
@@ -582,7 +582,7 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         <TabsContent value="ai">
           <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-200 text-center text-sm text-blue-700">
             <div className="flex justify-between items-center">
-              <p>Equipos generados con IA Groq basados en habilidades y posiciones de los jugadores.</p>
+              <p>Equipos generados con IA basados en habilidades y posiciones de los jugadores.</p>
               <Button
                 onClick={generateAITeams}
                 disabled={isGeneratingAI}
@@ -590,7 +590,7 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                {isGeneratingAI ? "Generando con IA..." : "Generar con Groq IA"}
+                {isGeneratingAI ? "Generando con IA..." : "Generar con IA"}
               </Button>
             </div>
           </div>
@@ -650,7 +650,7 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
               <CardHeader>
                 <CardTitle className="text-lg text-blue-800 flex items-center">
                   <Brain className="mr-2 h-5 w-5" />
-                  Estrategia de Formación de Equipos (Groq IA)
+                  Estrategia de Formación de Equipos (IA)
                 </CardTitle>
                 <CardDescription>Análisis detallado del proceso de selección</CardDescription>
               </CardHeader>

@@ -107,6 +107,36 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     console.log(`⚖️ División de equipos: Equipo 1: ${team1Size} jugadores, Equipo 2: ${team2Size} jugadores`)
 
+    // Helper function to suggest formations based on team size
+    const getFormationSuggestions = (teamSize: number) => {
+      switch (teamSize) {
+        case 3:
+          return ["1-1-1", "2-1", "1-2"]
+        case 4:
+          return ["1-2-1", "2-2", "1-1-2"]
+        case 5:
+          return ["1-2-2", "1-3-1", "2-2-1"]
+        case 6:
+          return ["1-2-3", "1-3-2", "2-2-2"]
+        case 7:
+          return ["1-3-3", "1-2-4", "2-3-2"]
+        case 8:
+          return ["1-3-4", "1-4-3", "2-3-3"]
+        case 9:
+          return ["1-4-4", "1-3-5", "2-4-3"]
+        case 10:
+          return ["1-4-5", "1-5-4", "2-4-4"]
+        case 11:
+          return ["1-4-4-2", "1-4-3-3", "1-3-5-2"]
+        default:
+          if (teamSize <= 2) return [`${teamSize}-0`]
+          return [`1-${Math.floor((teamSize - 1) / 2)}-${Math.ceil((teamSize - 1) / 2)}`]
+      }
+    }
+
+    const team1Formations = getFormationSuggestions(team1Size)
+    const team2Formations = getFormationSuggestions(team2Size)
+
     // Create the prompt with all players
     const prompt = `
 INSTRUCCIONES IMPORTANTES:
@@ -115,6 +145,13 @@ INSTRUCCIONES IMPORTANTES:
 - Equipo 2 debe tener exactamente ${team2Size} jugadores
 - NO puedes omitir ningún jugador
 - Cada jugador debe estar en exactamente un equipo
+
+FORMACIONES APROPIADAS:
+- Para Equipo 1 (${team1Size} jugadores): ${team1Formations.join(", ")}
+- Para Equipo 2 (${team2Size} jugadores): ${team2Formations.join(", ")}
+
+IMPORTANTE: La formación debe coincidir EXACTAMENTE con el número de jugadores en cada equipo.
+Formato de formación: Arquero-Defensores-Mediocampistas-Delanteros (ej: 1-2-1 para 4 jugadores)
 
 LISTA COMPLETA DE JUGADORES INSCRITOS (${totalPlayers} jugadores):
 ${playersData
@@ -136,9 +173,18 @@ OBJETIVO: Crear dos equipos equilibrados usando TODOS los jugadores listados arr
 
 CRITERIOS DE EQUILIBRIO:
 1. Distribución equitativa de habilidades (velocidad, control, físico, actitud)
-2. Balance de posiciones (arqueros, defensores, mediocampistas, delanteros)
+2. Balance de posiciones apropiado para el número de jugadores
 3. Mezcla de jugadores experimentados e invitados
-4. Formaciones tácticas apropiadas para cada equipo
+4. Formaciones tácticas realistas para el número de jugadores disponibles
+5. Solo 1 arquero por equipo
+
+REGLAS DE FORMACIÓN:
+- Si hay 1 arquero disponible, debe ir en el equipo más grande
+- Si hay 2+ arqueros, distribuir entre equipos
+- Adaptar defensores, mediocampistas y delanteros según el tamaño del equipo
+- Para equipos pequeños (3-5 jugadores): formaciones simples como 1-1-1, 1-2-1
+- Para equipos medianos (6-8 jugadores): formaciones como 1-2-3, 1-3-2
+- Para equipos grandes (9+ jugadores): formaciones tradicionales como 1-4-4-1
 
 FORMATO DE RESPUESTA (JSON válido):
 {
@@ -151,7 +197,7 @@ FORMATO DE RESPUESTA (JSON válido):
         "reasoning": "Razón específica para esta asignación"
       }
     ],
-    "formation": "Formación táctica (ej: 4-4-2, 4-3-3, etc.)",
+    "formation": "Formación apropiada para ${team1Size} jugadores (ej: ${team1Formations[0]})",
     "strengths": ["Fortaleza principal 1", "Fortaleza principal 2", "Fortaleza principal 3"],
     "weaknesses": ["Debilidad potencial 1", "Debilidad potencial 2"]
   },
@@ -164,33 +210,34 @@ FORMATO DE RESPUESTA (JSON válido):
         "reasoning": "Razón específica para esta asignación"
       }
     ],
-    "formation": "Formación táctica (ej: 4-4-2, 4-3-3, etc.)",
+    "formation": "Formación apropiada para ${team2Size} jugadores (ej: ${team2Formations[0]})",
     "strengths": ["Fortaleza principal 1", "Fortaleza principal 2", "Fortaleza principal 3"],
     "weaknesses": ["Debilidad potencial 1", "Debilidad potencial 2"]
   },
   "balanceAnalysis": {
     "overallBalance": 8,
-    "explanation": "Análisis detallado del equilibrio entre equipos",
+    "explanation": "Análisis detallado del equilibrio entre equipos considerando el número limitado de jugadores",
     "recommendations": ["Recomendación táctica 1", "Recomendación táctica 2"]
   },
   "teamBuildingStrategy": {
-    "approach": "Descripción del enfoque estratégico utilizado",
+    "approach": "Descripción del enfoque estratégico para equipos de ${team1Size} vs ${team2Size} jugadores",
     "keyDecisions": ["Decisión clave 1", "Decisión clave 2", "Decisión clave 3"],
     "balancingFactors": ["Factor de equilibrio 1", "Factor de equilibrio 2"],
-    "expectedOutcome": "Predicción del resultado del partido",
-    "coachingTips": ["Consejo de entrenamiento 1", "Consejo de entrenamiento 2"]
+    "expectedOutcome": "Predicción del resultado considerando el tamaño de los equipos",
+    "coachingTips": ["Consejo para equipos pequeños 1", "Consejo para equipos pequeños 2"]
   }
 }
 
 VERIFICACIÓN FINAL:
-- Equipo 1: ${team1Size} jugadores
-- Equipo 2: ${team2Size} jugadores
+- Equipo 1: ${team1Size} jugadores con formación apropiada
+- Equipo 2: ${team2Size} jugadores con formación apropiada
 - Total: ${totalPlayers} jugadores (todos incluidos)
+- Las formaciones deben sumar exactamente el número de jugadores en cada equipo
 
 Usa EXACTAMENTE los IDs proporcionados (${playersData.map((p) => p.playerId).join(", ")}).
 `
 
-    console.log("🤖 Enviando prompt a Groq IA con todos los jugadores...")
+    console.log("🤖 Enviando prompt a IA con formaciones apropiadas...")
 
     // Generate teams using Groq AI
     const result = await generateObject({
@@ -202,7 +249,9 @@ Usa EXACTAMENTE los IDs proporcionados (${playersData.map((p) => p.playerId).joi
 
     console.log("✅ Respuesta de IA recibida")
     console.log("📋 Equipo 1 jugadores:", result.object.team1.players.length)
+    console.log("📋 Equipo 1 formación:", result.object.team1.formation)
     console.log("📋 Equipo 2 jugadores:", result.object.team2.players.length)
+    console.log("📋 Equipo 2 formación:", result.object.team2.formation)
     console.log(
       "📋 Total jugadores asignados:",
       result.object.team1.players.length + result.object.team2.players.length,
@@ -259,7 +308,7 @@ Usa EXACTAMENTE los IDs proporcionados (${playersData.map((p) => p.playerId).joi
       model: "llama3-8b-8192",
     })
   } catch (error) {
-    console.error("❌ Error al generar equipos con Groq IA:", error)
+    console.error("❌ Error al generar equipos con IA:", error)
 
     if (error instanceof Error) {
       console.error("Error message:", error.message)
