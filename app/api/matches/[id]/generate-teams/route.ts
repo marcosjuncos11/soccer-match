@@ -203,6 +203,7 @@ REGLAS FUNDAMENTALES DE POSICIONES:
 5. Solo jugadores con posición "arquero" pueden ser asignados como "arquero"
 6. SIEMPRE prioriza la posición principal del jugador
 7. Solo usa la posición secundaria si es absolutamente necesario para el balance
+8. SI hay 1 solo arquero, busca otro arquero con posicion "arco" como secundaria y asigna al otro equipo, para que cada equipo tenga un arquero al menos
 
 INSTRUCCIONES IMPORTANTES:
 - Es un partido de soccer
@@ -245,6 +246,7 @@ CRITERIOS DE EQUILIBRIO (en orden de prioridad):
 4. Balance de posiciones apropiado para el número de jugadores
 5. Mezcla de jugadores experimentados e invitados
 6. Formaciones tácticas realistas para el número de jugadores disponibles
+7. Si estos pares de jugadores estan presentes (Por players.name), distribuyelos uno en cada equipo: ("Ludueña" y "Claudio"), ("Facu", "Juanjo"), ("Martín F.", "Gon Flaco")
 
 REGLAS DE ASIGNACIÓN DE POSICIONES:
 - Si un jugador tiene posición principal "arquero" → assignedPosition: "arquero" (MÁXIMO 1 POR EQUIPO)
@@ -304,9 +306,7 @@ FORMATO DE RESPUESTA (JSON válido):
     "coachingTips": ["Consejo basado en distribución de arqueros", "Consejo basado en posiciones naturales"]
   }
 }
-CONSIDERACIONES EXTRA:
-- "Ludueña" y "Claudio" son muy parejos, si estan presentes, poner en equipos distintos
-- "Martin F" y "Gon Flaco", si estan presentes, poner en equipos distintos
+
 
 VERIFICACIÓN FINAL OBLIGATORIA:
 - Equipo 1: ${team1Size} jugadores con formación apropiada y MÁXIMO 1 arquero
