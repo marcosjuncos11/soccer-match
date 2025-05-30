@@ -3,10 +3,15 @@ import { sql, generateId } from "@/lib/db"
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { playerName, mealOnly = false, positions = [] } = await request.json()
+    const { playerId, playerName, mealOnly = false, isGuest = false } = await request.json()
 
-    if (!playerName) {
-      return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 })
+    // Validate input
+    if (!isGuest && !playerId) {
+      return NextResponse.json({ error: "Se requiere seleccionar un jugador" }, { status: 400 })
+    }
+
+    if (isGuest && !playerName) {
+      return NextResponse.json({ error: "Se requiere el nombre del invitado" }, { status: 400 })
     }
 
     // Check if match exists
@@ -18,15 +23,42 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: "Partido no encontrado" }, { status: 404 })
     }
 
-    // Check if player already signed up
-    const existingSignup = await sql`
-      SELECT * FROM "Signup" 
-      WHERE "matchId" = ${params.id} 
-      AND LOWER("playerName") = LOWER(${playerName})
-    `
+    let finalPlayerName = playerName
 
-    if (existingSignup.length > 0) {
-      return NextResponse.json({ error: "Ya estás inscrito en este partido" }, { status: 400 })
+    // If not a guest, get player info from database
+    if (!isGuest && playerId) {
+      const player = await sql`
+        SELECT * FROM "Player" WHERE id = ${playerId}
+      `
+
+      if (player.length === 0) {
+        return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 })
+      }
+
+      finalPlayerName = player[0].name
+
+      // Check if this player is already signed up for this match
+      const existingSignup = await sql`
+        SELECT * FROM "Signup" 
+        WHERE "matchId" = ${params.id} 
+        AND "player_id" = ${playerId}
+      `
+
+      if (existingSignup.length > 0) {
+        return NextResponse.json({ error: "Este jugador ya está inscrito en el partido" }, { status: 400 })
+      }
+    } else {
+      // For guests, check if the name is already used
+      const existingGuestSignup = await sql`
+        SELECT * FROM "Signup" 
+        WHERE "matchId" = ${params.id} 
+        AND "playerName" = ${finalPlayerName}
+        AND "is_guest" = true
+      `
+
+      if (existingGuestSignup.length > 0) {
+        return NextResponse.json({ error: "Ya hay un invitado con este nombre en el partido" }, { status: 400 })
+      }
     }
 
     // For meal-only signups, we don't need to check player limits
@@ -61,9 +93,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Create signup - meal-only signups always have hasMeal=true
     const signup = await sql`
-      INSERT INTO "Signup" (id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order")
-      VALUES (${signupId}, ${params.id}, ${playerName}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${positions}, NOW(), ${nextOrder})
-      RETURNING id, "matchId", "playerName", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order"
+      INSERT INTO "Signup" (id, "matchId", "playerName", "player_id", "is_guest", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order")
+      VALUES (${signupId}, ${params.id}, ${finalPlayerName}, ${isGuest ? null : playerId}, ${isGuest}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${[]}, NOW(), ${nextOrder})
+      RETURNING id, "matchId", "playerName", "player_id", "is_guest", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order"
     `
 
     return NextResponse.json(signup[0], { status: 201 })
@@ -76,21 +108,21 @@ export async function POST(request: Request, { params }: { params: { id: string 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
     const url = new URL(request.url)
-    const playerName = url.searchParams.get("playerName")
+    const signupId = url.searchParams.get("signupId")
 
-    if (!playerName) {
-      return NextResponse.json({ error: "El nombre del jugador es requerido" }, { status: 400 })
+    if (!signupId) {
+      return NextResponse.json({ error: "Se requiere el ID de la inscripción" }, { status: 400 })
     }
 
     // Find the signup to delete
     const signupToDelete = await sql`
       SELECT * FROM "Signup" 
       WHERE "matchId" = ${params.id} 
-      AND "playerName" = ${playerName}
+      AND id = ${signupId}
     `
 
     if (signupToDelete.length === 0) {
-      return NextResponse.json({ error: "Jugador no encontrado" }, { status: 404 })
+      return NextResponse.json({ error: "Inscripción no encontrada" }, { status: 404 })
     }
 
     const wasWaiting = signupToDelete[0].isWaiting
@@ -99,7 +131,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     // Delete the signup
     await sql`
       DELETE FROM "Signup" 
-      WHERE id = ${signupToDelete[0].id}
+      WHERE id = ${signupId}
     `
 
     // If the deleted player was not on the waiting list and not meal-only, promote the first waiting player

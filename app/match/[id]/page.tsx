@@ -5,13 +5,10 @@ import type React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CalendarIcon, MapPin, Users, Utensils, Share2, Edit, UsersRound, UserPlus, ChevronUp } from "lucide-react"
+import { CalendarIcon, MapPin, Users, Utensils, Share2, UsersRound, UserPlus, ChevronUp } from "lucide-react"
 import { format } from "date-fns"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { PositionSelector } from "@/components/position-selector"
+import { PlayerSelector } from "@/components/player-selector"
 import { useRouter } from "next/navigation"
 import {
   AlertDialog,
@@ -28,6 +25,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface Player {
   id: string
   playerName: string
+  player_id?: string
+  is_guest: boolean
   isWaiting: boolean
   signupTime: string
   matchId: string
@@ -51,9 +50,12 @@ interface Match {
 export default function MatchDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [match, setMatch] = useState<Match | null>(null)
-  const [playerName, setPlayerName] = useState("")
-  const [playerPositions, setPlayerPositions] = useState<string[]>([])
-  const [mealOnlyName, setMealOnlyName] = useState("")
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
+  const [selectedPlayerName, setSelectedPlayerName] = useState("")
+  const [isSelectedPlayerGuest, setIsSelectedPlayerGuest] = useState(false)
+  const [selectedMealPlayerId, setSelectedMealPlayerId] = useState<string | null>(null)
+  const [selectedMealPlayerName, setSelectedMealPlayerName] = useState("")
+  const [isSelectedMealPlayerGuest, setIsSelectedMealPlayerGuest] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningUp, setIsSigningUp] = useState(false)
   const [isSigningUpMealOnly, setIsSigningUpMealOnly] = useState(false)
@@ -61,8 +63,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [newSignup, setNewSignup] = useState(false)
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
-  const [editingPositions, setEditingPositions] = useState<string[]>([])
-  const [isUpdatingPositions, setIsUpdatingPositions] = useState(false)
   const [isMovingPlayer, setIsMovingPlayer] = useState<string | null>(null)
 
   // Ref for the signup section
@@ -105,9 +105,21 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     signupSectionRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  const handlePlayerSelect = (playerId: string | null, playerName: string, isGuest: boolean) => {
+    setSelectedPlayerId(playerId)
+    setSelectedPlayerName(playerName)
+    setIsSelectedPlayerGuest(isGuest)
+  }
+
+  const handleMealPlayerSelect = (playerId: string | null, playerName: string, isGuest: boolean) => {
+    setSelectedMealPlayerId(playerId)
+    setSelectedMealPlayerName(playerName)
+    setIsSelectedMealPlayerGuest(isGuest)
+  }
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!playerName.trim()) return
+    if (!selectedPlayerName.trim()) return
 
     setIsSigningUp(true)
     try {
@@ -117,9 +129,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          playerName: playerName.trim(),
+          playerId: selectedPlayerId,
+          playerName: selectedPlayerName,
           mealOnly: false,
-          positions: playerPositions,
+          isGuest: isSelectedPlayerGuest,
         }),
       })
 
@@ -129,8 +142,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
 
       await fetchMatch()
-      setPlayerName("")
-      setPlayerPositions([])
+      setSelectedPlayerId(null)
+      setSelectedPlayerName("")
+      setIsSelectedPlayerGuest(false)
       setNewSignup(true)
       setShowShareDialog(true)
     } catch (error: any) {
@@ -143,7 +157,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
 
   const handleMealOnlySignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!mealOnlyName.trim()) return
+    if (!selectedMealPlayerName.trim()) return
 
     setIsSigningUpMealOnly(true)
     try {
@@ -153,9 +167,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          playerName: mealOnlyName.trim(),
+          playerId: selectedMealPlayerId,
+          playerName: selectedMealPlayerName,
           mealOnly: true,
-          positions: [],
+          isGuest: isSelectedMealPlayerGuest,
         }),
       })
 
@@ -165,7 +180,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
 
       await fetchMatch()
-      setMealOnlyName("")
+      setSelectedMealPlayerId(null)
+      setSelectedMealPlayerName("")
+      setIsSelectedMealPlayerGuest(false)
       setNewSignup(true)
       setShowShareDialog(true)
     } catch (error: any) {
@@ -176,14 +193,11 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
-  const handleUnsign = async (playerNameToRemove: string) => {
+  const handleUnsign = async (signupId: string) => {
     try {
-      const response = await fetch(
-        `/api/matches/${params.id}/signup?playerName=${encodeURIComponent(playerNameToRemove)}`,
-        {
-          method: "DELETE",
-        },
-      )
+      const response = await fetch(`/api/matches/${params.id}/signup?signupId=${encodeURIComponent(signupId)}`, {
+        method: "DELETE",
+      })
 
       if (!response.ok) {
         throw new Error("Error al eliminar al jugador")
@@ -241,47 +255,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
-  const handleEditPositions = (player: Player) => {
-    setEditingPlayerId(player.id)
-    setEditingPositions(player.positions || [])
-  }
-
-  const handleCancelEditPositions = () => {
-    setEditingPlayerId(null)
-    setEditingPositions([])
-  }
-
-  const handleSavePositions = async () => {
-    if (!editingPlayerId) return
-
-    setIsUpdatingPositions(true)
-    try {
-      const response = await fetch(`/api/matches/${params.id}/player/positions`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          playerId: editingPlayerId,
-          positions: editingPositions,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Error al actualizar las posiciones")
-      }
-
-      await fetchMatch()
-      setEditingPlayerId(null)
-      setEditingPositions([])
-    } catch (error) {
-      console.error("Error updating positions:", error)
-      alert("Error al actualizar las posiciones. Por favor, inténtalo de nuevo.")
-    } finally {
-      setIsUpdatingPositions(false)
-    }
-  }
-
   const formatPlayerList = (players: Player[]) => {
     return players.map((player, index) => `${index + 1}. ${player.playerName}${player.hasMeal ? " 🍖" : ""}`).join("\n")
   }
@@ -318,28 +291,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     }
 
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
-  }
-
-  // Helper function to display positions
-  const getPositionBadges = (positions: string[]) => {
-    if (!positions || positions.length === 0) return null
-
-    const positionLabels: Record<string, string> = {
-      arco: "Arco",
-      defensa: "Defensa",
-      medio: "Medio",
-      delantero: "Delantero",
-    }
-
-    return (
-      <div className="flex flex-wrap gap-1 mt-1">
-        {positions.map((pos) => (
-          <Badge key={pos} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-            {positionLabels[pos] || pos}
-          </Badge>
-        ))}
-      </div>
-    )
   }
 
   // Render meal icon with enhanced visibility
@@ -489,89 +440,49 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      {editingPlayerId === player.id ? (
-                        <div className="w-full space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                            <span className="font-medium">{player.playerName}</span>
-                          </div>
-                          <PositionSelector
-                            onChange={setEditingPositions}
-                            initialPositions={editingPositions}
-                            disabled={isUpdatingPositions}
-                          />
-                          <div className="flex justify-end gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleCancelEditPositions}
-                              disabled={isUpdatingPositions}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              Cancelar
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={handleSavePositions}
-                              disabled={isUpdatingPositions}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              {isUpdatingPositions ? "Guardando..." : "Guardar"}
-                            </Button>
-                          </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                          <span className="font-medium">
+                            {player.playerName}
+                            {player.is_guest && <span className="text-xs text-gray-500 ml-1">(Invitado)</span>}
+                          </span>
+                          {renderMealIcon(player.id, player.hasMeal)}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleMovePlayerUp(player.id)}
+                                  disabled={isMovingPlayer === player.id || index === 0}
+                                  className={`p-1.5 rounded-full transition-colors ${
+                                    index === 0
+                                      ? "text-gray-300 cursor-not-allowed"
+                                      : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                                  }`}
+                                  aria-label="Mover arriba"
+                                >
+                                  {isMovingPlayer === player.id ? (
+                                    <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <ChevronUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Mover arriba</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                              <span className="font-medium">{player.playerName}</span>
-                              {renderMealIcon(player.id, player.hasMeal)}
-                              <button
-                                onClick={() => handleEditPositions(player)}
-                                className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                                aria-label="Editar posiciones"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </button>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => handleMovePlayerUp(player.id)}
-                                      disabled={isMovingPlayer === player.id || index === 0}
-                                      className={`p-1.5 rounded-full transition-colors ${
-                                        index === 0
-                                          ? "text-gray-300 cursor-not-allowed"
-                                          : "text-green-500 hover:text-green-700 hover:bg-green-50"
-                                      }`}
-                                      aria-label="Mover arriba"
-                                    >
-                                      {isMovingPlayer === player.id ? (
-                                        <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                                      ) : (
-                                        <ChevronUp className="h-4 w-4" />
-                                      )}
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Mover arriba</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                            {getPositionBadges(player.positions)}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleUnsign(player.playerName)}
-                          >
-                            Eliminar
-                          </Button>
-                        </>
-                      )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleUnsign(player.id)}
+                      >
+                        Eliminar
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -595,89 +506,49 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       className="flex justify-between items-start p-3 bg-white rounded-lg border border-green-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      {editingPlayerId === player.id ? (
-                        <div className="w-full space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                            <span className="font-medium">{player.playerName}</span>
-                          </div>
-                          <PositionSelector
-                            onChange={setEditingPositions}
-                            initialPositions={editingPositions}
-                            disabled={isUpdatingPositions}
-                          />
-                          <div className="flex justify-end gap-2 mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleCancelEditPositions}
-                              disabled={isUpdatingPositions}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              Cancelar
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={handleSavePositions}
-                              disabled={isUpdatingPositions}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              {isUpdatingPositions ? "Guardando..." : "Guardar"}
-                            </Button>
-                          </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
+                          <span className="font-medium">
+                            {player.playerName}
+                            {player.is_guest && <span className="text-xs text-gray-500 ml-1">(Invitado)</span>}
+                          </span>
+                          {renderMealIcon(player.id, player.hasMeal)}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleMovePlayerUp(player.id)}
+                                  disabled={isMovingPlayer === player.id || index === 0}
+                                  className={`p-1.5 rounded-full transition-colors ${
+                                    index === 0
+                                      ? "text-gray-300 cursor-not-allowed"
+                                      : "text-green-500 hover:text-green-700 hover:bg-green-50"
+                                  }`}
+                                  aria-label="Mover arriba"
+                                >
+                                  {isMovingPlayer === player.id ? (
+                                    <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <ChevronUp className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Mover arriba</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                              <span className="font-medium">{player.playerName}</span>
-                              {renderMealIcon(player.id, player.hasMeal)}
-                              <button
-                                onClick={() => handleEditPositions(player)}
-                                className="p-1.5 rounded-full text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-colors"
-                                aria-label="Editar posiciones"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </button>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => handleMovePlayerUp(player.id)}
-                                      disabled={isMovingPlayer === player.id || index === 0}
-                                      className={`p-1.5 rounded-full transition-colors ${
-                                        index === 0
-                                          ? "text-gray-300 cursor-not-allowed"
-                                          : "text-green-500 hover:text-green-700 hover:bg-green-50"
-                                      }`}
-                                      aria-label="Mover arriba"
-                                    >
-                                      {isMovingPlayer === player.id ? (
-                                        <div className="h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                                      ) : (
-                                        <ChevronUp className="h-4 w-4" />
-                                      )}
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Mover arriba</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                            {getPositionBadges(player.positions)}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleUnsign(player.playerName)}
-                          >
-                            Eliminar
-                          </Button>
-                        </>
-                      )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleUnsign(player.id)}
+                      >
+                        Eliminar
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -704,7 +575,10 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   >
                     <div className="flex items-center gap-2">
                       <span className="inline-block w-6 text-green-600 font-bold">{index + 1}.</span>
-                      <span className="font-medium">{player.playerName}</span>
+                      <span className="font-medium">
+                        {player.playerName}
+                        {player.is_guest && <span className="text-xs text-gray-500 ml-1">(Invitado)</span>}
+                      </span>
                       <span className="bg-green-500 text-white p-2 rounded-full shadow-md">
                         <Utensils className="h-5 w-5" />
                       </span>
@@ -738,7 +612,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                       variant="ghost"
                       size="sm"
                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleUnsign(player.playerName)}
+                      onClick={() => handleUnsign(player.id)}
                     >
                       Eliminar
                     </Button>
@@ -760,29 +634,16 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   Anotarme para Jugar
                 </h3>
                 <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="playerName" className="text-green-700">
-                      Tu Nombre
-                    </Label>
-                    <Input
-                      id="playerName"
-                      placeholder="Ingresa tu nombre para jugar"
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                      required
-                      className="border-green-200 focus-visible:ring-green-500"
-                    />
-                  </div>
-
-                  <PositionSelector
-                    onChange={setPlayerPositions}
-                    initialPositions={playerPositions}
+                  <PlayerSelector
+                    onPlayerSelect={handlePlayerSelect}
                     disabled={isSigningUp}
+                    label="Seleccionar Jugador"
+                    placeholder="Selecciona un jugador o agrega un invitado"
                   />
 
                   <Button
                     type="submit"
-                    disabled={isSigningUp || !playerName.trim()}
+                    disabled={isSigningUp || !selectedPlayerName.trim()}
                     className="w-full bg-green-600 hover:bg-green-700 transition-all duration-300"
                   >
                     {isSigningUp ? "Anotando..." : "Anotarme"}
@@ -800,22 +661,15 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                 </h3>
 
                 <form onSubmit={handleMealOnlySignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="mealOnlyName" className="text-green-700">
-                      Tu Nombre
-                    </Label>
-                    <Input
-                      id="mealOnlyName"
-                      placeholder="Ingresa tu nombre para comer"
-                      value={mealOnlyName}
-                      onChange={(e) => setMealOnlyName(e.target.value)}
-                      required
-                      className="border-green-200 focus-visible:ring-green-500"
-                    />
-                  </div>
+                  <PlayerSelector
+                    onPlayerSelect={handleMealPlayerSelect}
+                    disabled={isSigningUpMealOnly}
+                    label="Seleccionar Persona"
+                    placeholder="Selecciona una persona o agrega un invitado"
+                  />
                   <Button
                     type="submit"
-                    disabled={isSigningUpMealOnly || !mealOnlyName.trim()}
+                    disabled={isSigningUpMealOnly || !selectedMealPlayerName.trim()}
                     className="w-full bg-green-600 hover:bg-green-700 transition-all duration-300"
                   >
                     {isSigningUpMealOnly ? "Anotando..." : "Anotarme"}
