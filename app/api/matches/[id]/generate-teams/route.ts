@@ -183,7 +183,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
     // Create the prompt with all players
     const prompt = `
 
-Eres un seleccionador de equipos de futbol/soccer profesional. Tu objetivo es distribuir jugadores en 2 equipos de manera balanceada, RESPETANDO ESTRICTAMENTE las reglas de arqueros y posiciones.
+Eres un seleccionador de equipos de futbol/soccer amateur. 
+Tu objetivo es distribuir jugadores en 2 equipos de manera balanceada, RESPETANDO ESTRICTAMENTE las reglas de arqueros y posiciones.
 
 🚨 REGLAS CRÍTICAS DE ARQUEROS (OBLIGATORIAS):
 1. MÁXIMO 1 ARQUERO POR EQUIPO
@@ -303,6 +304,9 @@ FORMATO DE RESPUESTA (JSON válido):
     "coachingTips": ["Consejo basado en distribución de arqueros", "Consejo basado en posiciones naturales"]
   }
 }
+CONSIDERACIONES EXTRA:
+- "Ludueña" y "Claudio" son muy parejos, si estan presentes, poner en equipos distintos
+- "Martin F" y "Gon Flaco", si estan presentes, poner en equipos distintos
 
 VERIFICACIÓN FINAL OBLIGATORIA:
 - Equipo 1: ${team1Size} jugadores con formación apropiada y MÁXIMO 1 arquero
