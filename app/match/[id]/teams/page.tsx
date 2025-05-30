@@ -221,37 +221,55 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
       }
 
       const data = await response.json()
+      console.log("Respuesta IA:", data) // Debug log
       setAiTeamData(data.teams)
 
       // Convert AI teams to our format
       const aiTeamPlayers: TeamPlayer[] = []
 
+      // Get active players for reference
+      const activePlayers = match.signups.filter((player) => !player.isWaiting && !player.mealOnly)
+      console.log("Jugadores activos:", activePlayers) // Debug log
+      console.log("Jugadores Equipo 1 IA:", data.teams.team1.players) // Debug log
+      console.log("Jugadores Equipo 2 IA:", data.teams.team2.players) // Debug log
+
       // Add team 1 players
-      data.teams.team1.players.forEach((player: any) => {
-        const originalPlayer = match.signups.find((s) => s.id === player.playerId)
+      data.teams.team1.players.forEach((aiPlayer: any) => {
+        console.log("Buscando jugador con ID:", aiPlayer.playerId) // Debug log
+        const originalPlayer = activePlayers.find((s) => s.id === aiPlayer.playerId)
+        console.log("Jugador original encontrado:", originalPlayer) // Debug log
+
         if (originalPlayer) {
           aiTeamPlayers.push({
             ...originalPlayer,
             team: 1,
-            assignedPosition: player.assignedPosition,
-            reasoning: player.reasoning,
+            assignedPosition: aiPlayer.assignedPosition,
+            reasoning: aiPlayer.reasoning,
           })
+        } else {
+          console.warn("No se pudo encontrar el jugador original para el jugador de IA:", aiPlayer)
         }
       })
 
       // Add team 2 players
-      data.teams.team2.players.forEach((player: any) => {
-        const originalPlayer = match.signups.find((s) => s.id === player.playerId)
+      data.teams.team2.players.forEach((aiPlayer: any) => {
+        console.log("Buscando jugador con ID:", aiPlayer.playerId) // Debug log
+        const originalPlayer = activePlayers.find((s) => s.id === aiPlayer.playerId)
+        console.log("Jugador original encontrado:", originalPlayer) // Debug log
+
         if (originalPlayer) {
           aiTeamPlayers.push({
             ...originalPlayer,
             team: 2,
-            assignedPosition: player.assignedPosition,
-            reasoning: player.reasoning,
+            assignedPosition: aiPlayer.assignedPosition,
+            reasoning: aiPlayer.reasoning,
           })
+        } else {
+          console.warn("No se pudo encontrar el jugador original para el jugador de IA:", aiPlayer)
         }
       })
 
+      console.log("Jugadores finales de equipos IA:", aiTeamPlayers) // Debug log
       setTeamPlayers(aiTeamPlayers)
       setActiveTab("ai")
     } catch (error) {
@@ -462,7 +480,6 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     return (
       <div className="container py-10 text-center">
         <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-green-700">Cargando detalles del partido...</p>
         </div>
       </div>

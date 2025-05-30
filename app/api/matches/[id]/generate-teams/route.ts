@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     `
 
     if (match.length === 0) {
-      return NextResponse.json({ error: "Match not found" }, { status: 404 })
+      return NextResponse.json({ error: "Partido no encontrado" }, { status: 404 })
     }
 
     // Get signups for this match (only active players, not waiting or meal-only)
@@ -69,7 +69,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     `
 
     if (signups.length < 2) {
-      return NextResponse.json({ error: "Need at least 2 players to generate teams" }, { status: 400 })
+      return NextResponse.json({ error: "Se necesitan al menos 2 jugadores para generar equipos" }, { status: 400 })
     }
 
     // Prepare player data for AI
@@ -91,9 +91,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Create the prompt for AI
     const prompt = `
-You are a professional soccer coach tasked with creating two balanced teams for a friendly match.
+Eres un entrenador profesional de fútbol encargado de crear dos equipos equilibrados para un partido amistoso.
 
-Here are the available players with their skills (rated 1-10):
+Aquí están los jugadores disponibles con sus habilidades (calificadas del 1 al 10):
 
 ${playersData
   .map(
@@ -110,30 +110,30 @@ ${index + 1}. ${player.playerName} ${player.isGuest ? "(Guest)" : ""}
   )
   .join("")}
 
-Please create two balanced teams considering:
-1. Position coverage (each team should have at least one goalkeeper if possible)
-2. Skill balance (distribute high and low skilled players evenly)
-3. Physical attributes balance
-4. Team chemistry and attitude
-5. Try to make teams as even as possible in terms of overall strength
+Por favor, crea dos equipos equilibrados considerando:
+1. Cobertura de posiciones (cada equipo debe tener al menos un arquero si es posible)
+2. Equilibrio de habilidades (distribuir jugadores de alta y baja habilidad de manera uniforme)
+3. Equilibrio de atributos físicos
+4. Química del equipo y actitud
+5. Intenta hacer que los equipos sean lo más parejos posible en términos de fuerza general
 
-For each player assignment, provide a brief reasoning for why they were placed in that team and position.
-Also suggest a formation for each team and analyze the overall balance.
+Para cada asignación de jugador, proporciona un breve razonamiento de por qué fueron colocados en ese equipo y posición.
+También sugiere una formación para cada equipo y analiza el equilibrio general.
 
-IMPORTANT: Provide a comprehensive team building strategy that explains:
-- Your overall approach to team selection
-- Key decisions you made and why
-- What factors you balanced (skills, positions, chemistry)
-- What outcome you expect from these teams
-- Coaching tips for each team
+IMPORTANTE: Proporciona una estrategia integral de formación de equipos que explique:
+- Tu enfoque general para la selección del equipo
+- Decisiones clave que tomaste y por qué
+- Qué factores equilibraste (habilidades, posiciones, química)
+- Qué resultado esperas de estos equipos
+- Consejos de entrenamiento para cada equipo
 
-Position mapping:
-- arquero = goalkeeper
-- defensor = defender  
-- mediocampo = midfielder
-- delantero = forward
+Mapeo de posiciones:
+- arquero = portero/guardameta
+- defensor = defensa
+- mediocampo = centrocampista
+- delantero = atacante
 
-You must respond with valid JSON that matches the expected schema. Make sure all arrays contain at least one item and all required fields are present.
+Debes responder con JSON válido que coincida con el esquema esperado. Asegúrate de que todos los arrays contengan al menos un elemento y que todos los campos requeridos estén presentes.
 `
 
     // Generate teams using Groq AI with a currently available model
@@ -153,11 +153,11 @@ You must respond with valid JSON that matches the expected schema. Make sure all
       model: "llama3-8b-8192",
     })
   } catch (error) {
-    console.error("Error generating teams with Groq AI:", error)
+    console.error("Error al generar equipos con Groq IA:", error)
     return NextResponse.json(
       {
-        error: "Failed to generate teams with AI",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "Error al generar equipos con IA",
+        details: error instanceof Error ? error.message : "Error desconocido",
         provider: "groq",
       },
       { status: 500 },
