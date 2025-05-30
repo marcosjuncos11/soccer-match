@@ -195,7 +195,13 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         }
       }
 
-      setTeamPlayers(teamAssignments)
+      // Ordenar los jugadores por posición en cada equipo
+      const team1 = sortPlayersByPosition(teamAssignments.filter((p) => p.team === 1))
+      const team2 = sortPlayersByPosition(teamAssignments.filter((p) => p.team === 2))
+      const otherPlayers = teamAssignments.filter((p) => p.team !== 1 && p.team !== 2)
+
+      // Actualizar el estado con los equipos ordenados
+      setTeamPlayers([...otherPlayers, ...team1, ...team2])
     } catch (error) {
       console.error("Error generating teams:", error)
     } finally {
@@ -270,7 +276,13 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
       })
 
       console.log("Jugadores finales de equipos IA:", aiTeamPlayers) // Debug log
-      setTeamPlayers(aiTeamPlayers)
+      // Ordenar los jugadores por posición en cada equipo
+      const team1 = sortPlayersByPosition(aiTeamPlayers.filter((p) => p.team === 1))
+      const team2 = sortPlayersByPosition(aiTeamPlayers.filter((p) => p.team === 2))
+      const otherPlayers = aiTeamPlayers.filter((p) => p.team !== 1 && p.team !== 2)
+
+      // Actualizar el estado con los equipos ordenados
+      setTeamPlayers([...otherPlayers, ...team1, ...team2])
       setActiveTab("ai")
     } catch (error) {
       console.error("Error generating AI teams:", error)
@@ -288,9 +300,19 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
   }
 
   const movePlayerToOtherTeam = (playerId: string) => {
-    setTeamPlayers((prev) =>
-      prev.map((player) => (player.id === playerId ? { ...player, team: player.team === 1 ? 2 : 1 } : player)),
-    )
+    setTeamPlayers((prev) => {
+      // Primero, actualizar el equipo del jugador
+      const updatedPlayers = prev.map((player) =>
+        player.id === playerId ? { ...player, team: player.team === 1 ? 2 : 1 } : player,
+      )
+
+      // Luego ordenar los jugadores por posición en cada equipo
+      const team1 = sortPlayersByPosition(updatedPlayers.filter((p) => p.team === 1))
+      const team2 = sortPlayersByPosition(updatedPlayers.filter((p) => p.team === 2))
+
+      // Devolver la lista actualizada y ordenada
+      return [...updatedPlayers.filter((p) => p.team !== 1 && p.team !== 2), ...team1, ...team2]
+    })
   }
 
   const handleShareTeams = () => {
@@ -431,8 +453,14 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
       teamPlayers.splice(destination.index, 0, removed)
     }
 
-    // Update the state with the new order
-    setTeamPlayers([...newTeamPlayers.filter((p) => p.team !== 1 && p.team !== 2), ...team1Players, ...team2Players])
+    // Update the state with the new order, but maintain position sorting
+    const updatedTeam1Players = sortPlayersByPosition(team1Players)
+    const updatedTeam2Players = sortPlayersByPosition(team2Players)
+    setTeamPlayers([
+      ...newTeamPlayers.filter((p) => p.team !== 1 && p.team !== 2),
+      ...updatedTeam1Players,
+      ...updatedTeam2Players,
+    ])
   }
 
   // Helper function to display positions
@@ -503,8 +531,53 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     )
   }
 
-  const team1Players = teamPlayers.filter((player) => player.team === 1)
-  const team2Players = teamPlayers.filter((player) => player.team === 2)
+  // Buscar la sección donde se filtran los jugadores por equipo (team1Players y team2Players)
+  // y reemplazarla con una versión que también ordene por posición
+
+  // Reemplazar estas líneas:
+  // const team1Players = teamPlayers.filter((player) => player.team === 1)
+  // const team2Players = teamPlayers.filter((player) => player.team === 2)
+
+  // Con esta implementación que incluye ordenación por posición:
+  const getPositionOrder = (position: string | undefined) => {
+    if (!position) return 4
+    switch (position.toLowerCase()) {
+      case "arquero":
+        return 0
+      case "arco":
+        return 0
+      case "defensor":
+        return 1
+      case "defensa":
+        return 1
+      case "mediocampo":
+        return 2
+      case "medio":
+        return 2
+      case "delantero":
+        return 3
+      default:
+        return 4
+    }
+  }
+
+  const sortPlayersByPosition = (players: TeamPlayer[]) => {
+    return [...players].sort((a, b) => {
+      // Primero ordenar por posición asignada (si está disponible)
+      if (a.assignedPosition && b.assignedPosition) {
+        return getPositionOrder(a.assignedPosition) - getPositionOrder(b.assignedPosition)
+      }
+
+      // Si no hay posición asignada, usar la primera posición del array de posiciones
+      const aPosition = a.positions && a.positions.length > 0 ? a.positions[0] : undefined
+      const bPosition = b.positions && a.positions.length > 0 ? b.positions[0] : undefined
+
+      return getPositionOrder(aPosition) - getPositionOrder(bPosition)
+    })
+  }
+
+  const team1Players = sortPlayersByPosition(teamPlayers.filter((player) => player.team === 1))
+  const team2Players = sortPlayersByPosition(teamPlayers.filter((player) => player.team === 2))
 
   // Count positions per team
   const team1Positions = {
@@ -758,7 +831,6 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
                             {...provided.draggableProps}
                             style={{
                               ...provided.draggableProps.style,
-                              // Ensure the item doesn't change size when dragging
                               width: snapshot.isDragging ? provided.draggableProps.style?.width : "100%",
                             }}
                             className={`flex items-center p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${
@@ -854,7 +926,6 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
                             {...provided.draggableProps}
                             style={{
                               ...provided.draggableProps.style,
-                              // Ensure the item doesn't change size when dragging
                               width: snapshot.isDragging ? provided.draggableProps.style?.width : "100%",
                             }}
                             className={`flex items-center p-1 md:p-3 bg-white rounded-lg border border-green-100 shadow-sm transition-shadow ${

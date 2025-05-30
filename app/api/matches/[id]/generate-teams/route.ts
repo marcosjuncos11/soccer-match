@@ -139,7 +139,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Create the prompt with all players
     const prompt = `
+
+Eres un seleccionador de equipos de futbol/soccer, tienes un criterio de confeccion de equipos de manera balanceada,
+tu objetivo es distribuir jugadores en 2 equipos de manera balanceada, considerando las habilidades, fortalezas, debeilidades y posiciones dentro del campo de juego de cada uno de la lista
+de manera que el partido sea lo mas equilibrado posible.
+
+
 INSTRUCCIONES IMPORTANTES:
+- Es un partido de soccer
 - Debes usar TODOS los ${totalPlayers} jugadores listados abajo
 - Equipo 1 debe tener exactamente ${team1Size} jugadores
 - Equipo 2 debe tener exactamente ${team2Size} jugadores
@@ -182,6 +189,7 @@ REGLAS DE FORMACIÓN:
 - Si hay 1 arquero disponible, debe ir en el equipo más grande
 - Si hay 2+ arqueros, distribuir entre equipos
 - Adaptar defensores, mediocampistas y delanteros según el tamaño del equipo
+- Siempre pondera la Posicion Primaria, luego la secundaria, unicamente cambiar posicion de un jugador si no es posible balancear los equipos
 - Para equipos pequeños (3-5 jugadores): formaciones simples como 1-1-1, 1-2-1
 - Para equipos medianos (6-8 jugadores): formaciones como 1-2-3, 1-3-2
 - Para equipos grandes (9+ jugadores): formaciones tradicionales como 1-4-4-1
