@@ -322,6 +322,7 @@ Usa EXACTAMENTE los IDs proporcionados (${playersData.map((p) => p.playerId).joi
 `
 
     console.log("🤖 Enviando prompt a IA con reglas estrictas de arqueros...")
+    console.log(prompt)
 
     // Generate teams using Groq AI
     const result = await generateObject({
