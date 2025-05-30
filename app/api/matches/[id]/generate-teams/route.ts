@@ -136,9 +136,9 @@ Position mapping:
 You must respond with valid JSON that matches the expected schema. Make sure all arrays contain at least one item and all required fields are present.
 `
 
-    // Generate teams using Groq AI
+    // Generate teams using Groq AI with a currently supported model
     const result = await generateObject({
-      model: groq("llama-3.1-70b-versatile"),
+      model: groq("llama-3.1-70b"), // Updated to use the current model
       schema: teamGenerationSchema,
       prompt: prompt,
       temperature: 0.7,
