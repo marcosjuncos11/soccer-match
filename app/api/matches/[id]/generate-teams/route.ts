@@ -136,9 +136,9 @@ Position mapping:
 You must respond with valid JSON that matches the expected schema. Make sure all arrays contain at least one item and all required fields are present.
 `
 
-    // Generate teams using Groq AI with a currently supported model
+    // Generate teams using Groq AI with a currently available model
     const result = await generateObject({
-      model: groq("llama-3.1-70b"), // Updated to use the current model
+      model: groq("llama3-8b-8192"), // Updated to use a currently available model
       schema: teamGenerationSchema,
       prompt: prompt,
       temperature: 0.7,
@@ -150,6 +150,7 @@ You must respond with valid JSON that matches the expected schema. Make sure all
       playersAnalyzed: playersData.length,
       matchId: params.id,
       provider: "groq",
+      model: "llama3-8b-8192",
     })
   } catch (error) {
     console.error("Error generating teams with Groq AI:", error)
