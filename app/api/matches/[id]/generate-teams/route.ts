@@ -74,7 +74,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // Prepare player data for AI
     const playersData = signups.map((signup) => ({
-      playerId: signup.id,
+      playerId: signup.id, // Usar el ID del signup, no el nombre
       playerName: signup.playerName,
       isGuest: signup.is_guest,
       primaryPosition: signup.primary_position || "mediocampo",
@@ -98,17 +98,19 @@ Aquí están los jugadores disponibles con sus habilidades (calificadas del 1 al
 ${playersData
   .map(
     (player, index) => `
-${index + 1}. ${player.playerName} ${player.isGuest ? "(Guest)" : ""}
-   - Primary Position: ${player.primaryPosition}
-   - Secondary Position: ${player.secondaryPosition || "None"}
-   - Speed: ${player.speed}/10
+${index + 1}. ID: ${player.playerId} | Nombre: ${player.playerName} ${player.isGuest ? "(Invitado)" : ""}
+   - Posición Principal: ${player.primaryPosition}
+   - Posición Secundaria: ${player.secondaryPosition || "Ninguna"}
+   - Velocidad: ${player.speed}/10
    - Control: ${player.control}/10
-   - Physical Condition: ${player.physicalCondition}/10
-   - Attitude: ${player.attitude}/10
-   - Overall Rating: ${player.overallRating}/10
+   - Condición Física: ${player.physicalCondition}/10
+   - Actitud: ${player.attitude}/10
+   - Calificación General: ${player.overallRating}/10
 `,
   )
   .join("")}
+
+IMPORTANTE: Cuando asignes jugadores a los equipos, DEBES usar el ID exacto proporcionado arriba (por ejemplo: "${playersData[0]?.playerId}"), NO el nombre del jugador.
 
 Por favor, crea dos equipos equilibrados considerando:
 1. Cobertura de posiciones (cada equipo debe tener al menos un arquero si es posible)
@@ -132,6 +134,8 @@ Mapeo de posiciones:
 - defensor = defensa
 - mediocampo = centrocampista
 - delantero = atacante
+
+RECUERDA: Usa los IDs exactos proporcionados, no los nombres de los jugadores.
 
 Debes responder con JSON válido que coincida con el esquema esperado. Asegúrate de que todos los arrays contengan al menos un elemento y que todos los campos requeridos estén presentes.
 `
