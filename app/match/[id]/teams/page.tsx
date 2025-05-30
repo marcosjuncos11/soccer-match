@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2, GripVertical } from "lucide-react"
+import { ArrowLeftRight, RefreshCw, ArrowLeft, Share2, GripVertical, Sparkles, Brain } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface Player {
   id: string
@@ -19,6 +20,7 @@ interface Player {
   hasMeal: boolean
   mealOnly: boolean
   positions: string[]
+  is_guest?: boolean
 }
 
 interface Match {
@@ -34,6 +36,37 @@ interface Match {
 
 interface TeamPlayer extends Player {
   team: number
+  assignedPosition?: string
+  reasoning?: string
+}
+
+interface AITeamData {
+  players: Array<{
+    playerId: string
+    playerName: string
+    assignedPosition: string
+    reasoning: string
+  }>
+  formation: string
+  strengths: string[]
+  weaknesses: string[]
+}
+
+interface AIGeneratedTeams {
+  team1: AITeamData
+  team2: AITeamData
+  balanceAnalysis: {
+    overallBalance: number
+    explanation: string
+    recommendations: string[]
+  }
+  teamBuildingStrategy: {
+    approach: string
+    keyDecisions: string[]
+    balancingFactors: string[]
+    expectedOutcome: string
+    coachingTips: string[]
+  }
 }
 
 export default function TeamsPage({ params }: { params: { id: string } }) {
@@ -43,6 +76,9 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string | null>(null)
   const [teamPlayers, setTeamPlayers] = useState<TeamPlayer[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+  const [aiTeamData, setAiTeamData] = useState<AIGeneratedTeams | null>(null)
+  const [activeTab, setActiveTab] = useState("manual")
 
   const fetchMatch = useCallback(async () => {
     try {
@@ -167,6 +203,65 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     }
   }
 
+  const generateAITeams = async () => {
+    if (!match) return
+
+    setIsGeneratingAI(true)
+    try {
+      const response = await fetch(`/api/matches/${params.id}/generate-teams`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error generating AI teams")
+      }
+
+      const data = await response.json()
+      setAiTeamData(data.teams)
+
+      // Convert AI teams to our format
+      const aiTeamPlayers: TeamPlayer[] = []
+
+      // Add team 1 players
+      data.teams.team1.players.forEach((player: any) => {
+        const originalPlayer = match.signups.find((s) => s.id === player.playerId)
+        if (originalPlayer) {
+          aiTeamPlayers.push({
+            ...originalPlayer,
+            team: 1,
+            assignedPosition: player.assignedPosition,
+            reasoning: player.reasoning,
+          })
+        }
+      })
+
+      // Add team 2 players
+      data.teams.team2.players.forEach((player: any) => {
+        const originalPlayer = match.signups.find((s) => s.id === player.playerId)
+        if (originalPlayer) {
+          aiTeamPlayers.push({
+            ...originalPlayer,
+            team: 2,
+            assignedPosition: player.assignedPosition,
+            reasoning: player.reasoning,
+          })
+        }
+      })
+
+      setTeamPlayers(aiTeamPlayers)
+      setActiveTab("ai")
+    } catch (error) {
+      console.error("Error generating AI teams:", error)
+      alert("Error al generar equipos con IA. Por favor, inténtalo de nuevo.")
+    } finally {
+      setIsGeneratingAI(false)
+    }
+  }
+
   const handleRegenerateTeams = () => {
     if (!match) return
 
@@ -188,8 +283,11 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
     const positionLabels: Record<string, string> = {
       arco: "Arco",
+      arquero: "Arco",
       defensa: "Defensa",
+      defensor: "Defensa",
       medio: "Medio",
+      mediocampo: "Medio",
       delantero: "Delantero",
     }
 
@@ -201,8 +299,17 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
     message += `📅 ${format(new Date(match.dateTime), "PPP 'a las' p", { locale: es })}\n`
     message += `📍 ${match.locationName}\n\n`
 
+    // Add AI analysis if available
+    if (activeTab === "ai" && aiTeamData) {
+      message += `🤖 *EQUIPOS GENERADOS CON IA*\n`
+      message += `Balance General: ${aiTeamData.balanceAnalysis.overallBalance}/10\n\n`
+    }
+
     // Team 1
     message += `*EQUIPO 1 (${team1Players.length} jugadores)*\n`
+    if (activeTab === "ai" && aiTeamData) {
+      message += `Formación: ${aiTeamData.team1.formation}\n`
+    }
     team1Players.forEach((player, index) => {
       let playerInfo = `${index + 1}. ${player.playerName}`
 
@@ -211,8 +318,10 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         playerInfo += ` 🍖`
       }
 
-      // Add positions if available
-      if (player.positions && player.positions.length > 0) {
+      // Add assigned position if available (AI mode)
+      if (player.assignedPosition) {
+        playerInfo += ` (${positionLabels[player.assignedPosition] || player.assignedPosition})`
+      } else if (player.positions && player.positions.length > 0) {
         const positionText = player.positions.map((pos) => positionLabels[pos] || pos).join(", ")
         playerInfo += ` (${positionText})`
       }
@@ -222,6 +331,9 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
     // Team 2
     message += `\n*EQUIPO 2 (${team2Players.length} jugadores)*\n`
+    if (activeTab === "ai" && aiTeamData) {
+      message += `Formación: ${aiTeamData.team2.formation}\n`
+    }
     team2Players.forEach((player, index) => {
       let playerInfo = `${index + 1}. ${player.playerName}`
 
@@ -230,14 +342,26 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
         playerInfo += ` 🍖`
       }
 
-      // Add positions if available
-      if (player.positions && player.positions.length > 0) {
+      // Add assigned position if available (AI mode)
+      if (player.assignedPosition) {
+        playerInfo += ` (${positionLabels[player.assignedPosition] || player.assignedPosition})`
+      } else if (player.positions && player.positions.length > 0) {
         const positionText = player.positions.map((pos) => positionLabels[pos] || pos).join(", ")
         playerInfo += ` (${positionText})`
       }
 
       message += `${playerInfo}\n`
     })
+
+    // Add AI analysis if available
+    if (activeTab === "ai" && aiTeamData) {
+      message += `\n*ANÁLISIS IA:*\n${aiTeamData.balanceAnalysis.explanation}\n`
+
+      if (aiTeamData.teamBuildingStrategy) {
+        message += `\n*ESTRATEGIA:*\n${aiTeamData.teamBuildingStrategy.approach}\n`
+        message += `\n*RESULTADO ESPERADO:*\n${aiTeamData.teamBuildingStrategy.expectedOutcome}\n`
+      }
+    }
 
     // Open WhatsApp with the message
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank")
@@ -294,7 +418,26 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
   }
 
   // Helper function to display positions
-  const getPositionBadges = (positions: string[]) => {
+  const getPositionBadges = (positions: string[], assignedPosition?: string) => {
+    // If we have an assigned position from AI, show that
+    if (assignedPosition) {
+      const positionLabels: Record<string, string> = {
+        arquero: "Arco",
+        defensor: "Defensa",
+        mediocampo: "Medio",
+        delantero: "Delantero",
+      }
+
+      return (
+        <div className="flex flex-wrap gap-1 mt-1">
+          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+            IA: {positionLabels[assignedPosition] || assignedPosition}
+          </Badge>
+        </div>
+      )
+    }
+
+    // Otherwise show regular positions
     if (!positions || positions.length === 0) return null
 
     const positionLabels: Record<string, string> = {
@@ -348,17 +491,31 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
 
   // Count positions per team
   const team1Positions = {
-    arco: team1Players.filter((p) => p.positions && p.positions.includes("arco")).length,
-    defensa: team1Players.filter((p) => p.positions && p.positions.includes("defensa")).length,
-    medio: team1Players.filter((p) => p.positions && p.positions.includes("medio")).length,
-    delantero: team1Players.filter((p) => p.positions && p.positions.includes("delantero")).length,
+    arco: team1Players.filter((p) => p.assignedPosition === "arquero" || (p.positions && p.positions.includes("arco")))
+      .length,
+    defensa: team1Players.filter(
+      (p) => p.assignedPosition === "defensor" || (p.positions && p.positions.includes("defensa")),
+    ).length,
+    medio: team1Players.filter(
+      (p) => p.assignedPosition === "mediocampo" || (p.positions && p.positions.includes("medio")),
+    ).length,
+    delantero: team1Players.filter(
+      (p) => p.assignedPosition === "delantero" || (p.positions && p.positions.includes("delantero")),
+    ).length,
   }
 
   const team2Positions = {
-    arco: team2Players.filter((p) => p.positions && p.positions.includes("arco")).length,
-    defensa: team2Players.filter((p) => p.positions && p.positions.includes("defensa")).length,
-    medio: team2Players.filter((p) => p.positions && p.positions.includes("medio")).length,
-    delantero: team2Players.filter((p) => p.positions && p.positions.includes("delantero")).length,
+    arco: team2Players.filter((p) => p.assignedPosition === "arquero" || (p.positions && p.positions.includes("arco")))
+      .length,
+    defensa: team2Players.filter(
+      (p) => p.assignedPosition === "defensor" || (p.positions && p.positions.includes("defensa")),
+    ).length,
+    medio: team2Players.filter(
+      (p) => p.assignedPosition === "mediocampo" || (p.positions && p.positions.includes("medio")),
+    ).length,
+    delantero: team2Players.filter(
+      (p) => p.assignedPosition === "delantero" || (p.positions && p.positions.includes("delantero")),
+    ).length,
   }
 
   return (
@@ -373,20 +530,167 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
             <Share2 className="mr-2 h-4 w-4" />
             Compartir Equipos
           </Button>
-          <Button
-            onClick={handleRegenerateTeams}
-            disabled={isGenerating}
-            className="bg-green-600 hover:bg-green-700 flex-1 sm:flex-auto"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {isGenerating ? "Generando..." : "Armar de Nuevo"}
-          </Button>
         </div>
       </div>
 
-      <div className="mb-4 bg-green-50 p-3 rounded-lg border border-green-200 text-center text-sm text-green-700">
-        <p>Arrastra y suelta los jugadores para reordenarlos dentro del mismo equipo</p>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="manual" className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Manual
+          </TabsTrigger>
+          <TabsTrigger value="ai" className="flex items-center gap-2">
+            <Brain className="h-4 w-4" />
+            IA
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="manual">
+          <div className="mb-4 bg-green-50 p-3 rounded-lg border border-green-200 text-center text-sm text-green-700">
+            <div className="flex justify-between items-center">
+              <p>Equipos generados aleatoriamente. Arrastra y suelta para reordenar.</p>
+              <Button
+                onClick={handleRegenerateTeams}
+                disabled={isGenerating}
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                {isGenerating ? "Generando..." : "Armar de Nuevo"}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai">
+          <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-200 text-center text-sm text-blue-700">
+            <div className="flex justify-between items-center">
+              <p>Equipos generados con IA basados en habilidades y posiciones de los jugadores.</p>
+              <Button
+                onClick={generateAITeams}
+                disabled={isGeneratingAI}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {isGeneratingAI ? "Generando con IA..." : "Generar con IA"}
+              </Button>
+            </div>
+          </div>
+
+          {/* AI Analysis */}
+          {aiTeamData && (
+            <div className="mb-6 grid gap-4 md:grid-cols-3">
+              <Card className="border-blue-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-blue-800">Balance General</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">{aiTeamData.balanceAnalysis.overallBalance}/10</div>
+                  <p className="text-xs text-blue-600 mt-1">{aiTeamData.balanceAnalysis.explanation}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-blue-800">Equipo 1</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm font-medium">Formación: {aiTeamData.team1.formation}</p>
+                  <div className="mt-2">
+                    <p className="text-xs text-green-600">Fortalezas:</p>
+                    <ul className="text-xs text-green-600">
+                      {aiTeamData.team1.strengths.slice(0, 2).map((strength, i) => (
+                        <li key={i}>• {strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-blue-800">Equipo 2</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm font-medium">Formación: {aiTeamData.team2.formation}</p>
+                  <div className="mt-2">
+                    <p className="text-xs text-green-600">Fortalezas:</p>
+                    <ul className="text-xs text-green-600">
+                      {aiTeamData.team2.strengths.slice(0, 2).map((strength, i) => (
+                        <li key={i}>• {strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* AI Team Building Strategy */}
+          {aiTeamData && aiTeamData.teamBuildingStrategy && (
+            <Card className="mb-6 border-blue-200 bg-blue-50">
+              <CardHeader>
+                <CardTitle className="text-lg text-blue-800 flex items-center">
+                  <Brain className="mr-2 h-5 w-5" />
+                  Estrategia de Formación de Equipos
+                </CardTitle>
+                <CardDescription>Análisis detallado del proceso de selección</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Enfoque General:</h4>
+                  <p className="text-sm text-blue-700 bg-white p-3 rounded-lg border border-blue-200">
+                    {aiTeamData.teamBuildingStrategy.approach}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-2">Decisiones Clave:</h4>
+                    <ul className="space-y-1">
+                      {aiTeamData.teamBuildingStrategy.keyDecisions.map((decision, index) => (
+                        <li key={index} className="text-sm text-blue-700 bg-white p-2 rounded border border-blue-200">
+                          • {decision}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-2">Factores Balanceados:</h4>
+                    <ul className="space-y-1">
+                      {aiTeamData.teamBuildingStrategy.balancingFactors.map((factor, index) => (
+                        <li key={index} className="text-sm text-blue-700 bg-white p-2 rounded border border-blue-200">
+                          • {factor}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Resultado Esperado:</h4>
+                  <p className="text-sm text-blue-700 bg-white p-3 rounded-lg border border-blue-200">
+                    {aiTeamData.teamBuildingStrategy.expectedOutcome}
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Consejos de Entrenamiento:</h4>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {aiTeamData.teamBuildingStrategy.coachingTips.map((tip, index) => (
+                      <div key={index} className="text-sm text-blue-700 bg-white p-2 rounded border border-blue-200">
+                        💡 {tip}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Teams container with drag and drop */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -455,10 +759,18 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
                                 <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base flex-shrink-0">
                                   {index + 1}.
                                 </span>
-                                <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                <span className="font-medium text-xs md:text-base truncate">
+                                  {player.playerName}
+                                  {player.is_guest && <span className="text-xs text-gray-500 ml-1">(Invitado)</span>}
+                                </span>
                                 {player.hasMeal && <span className="text-xs md:text-sm flex-shrink-0">🍖</span>}
                               </div>
-                              <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                              <div className="hidden sm:block">
+                                {getPositionBadges(player.positions, player.assignedPosition)}
+                              </div>
+                              {player.reasoning && activeTab === "ai" && (
+                                <p className="text-xs text-blue-600 mt-1 hidden md:block">{player.reasoning}</p>
+                              )}
                             </div>
                             <Button
                               variant="ghost"
@@ -543,10 +855,18 @@ export default function TeamsPage({ params }: { params: { id: string } }) {
                                 <span className="inline-block w-4 md:w-6 text-green-600 font-bold text-xs md:text-base flex-shrink-0">
                                   {index + 1}.
                                 </span>
-                                <span className="font-medium text-xs md:text-base truncate">{player.playerName}</span>
+                                <span className="font-medium text-xs md:text-base truncate">
+                                  {player.playerName}
+                                  {player.is_guest && <span className="text-xs text-gray-500 ml-1">(Invitado)</span>}
+                                </span>
                                 {player.hasMeal && <span className="text-xs md:text-sm flex-shrink-0">🍖</span>}
                               </div>
-                              <div className="hidden sm:block">{getPositionBadges(player.positions)}</div>
+                              <div className="hidden sm:block">
+                                {getPositionBadges(player.positions, player.assignedPosition)}
+                              </div>
+                              {player.reasoning && activeTab === "ai" && (
+                                <p className="text-xs text-blue-600 mt-1 hidden md:block">{player.reasoning}</p>
+                              )}
                             </div>
                             <Button
                               variant="ghost"
