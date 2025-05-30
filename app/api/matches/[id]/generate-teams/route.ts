@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { generateObject } from "ai"
-import { openai } from "@ai-sdk/openai"
+import { groq } from "@ai-sdk/groq"
 import { z } from "zod"
 
 // Define the schema for the AI response
@@ -132,13 +132,16 @@ Position mapping:
 - defensor = defender  
 - mediocampo = midfielder
 - delantero = forward
+
+You must respond with valid JSON that matches the expected schema. Make sure all arrays contain at least one item and all required fields are present.
 `
 
-    // Generate teams using AI
+    // Generate teams using Groq AI
     const result = await generateObject({
-      model: openai("gpt-4o"),
+      model: groq("llama-3.1-70b-versatile"),
       schema: teamGenerationSchema,
       prompt: prompt,
+      temperature: 0.7,
     })
 
     return NextResponse.json({
@@ -146,13 +149,15 @@ Position mapping:
       teams: result.object,
       playersAnalyzed: playersData.length,
       matchId: params.id,
+      provider: "groq",
     })
   } catch (error) {
-    console.error("Error generating teams with AI:", error)
+    console.error("Error generating teams with Groq AI:", error)
     return NextResponse.json(
       {
         error: "Failed to generate teams with AI",
         details: error instanceof Error ? error.message : "Unknown error",
+        provider: "groq",
       },
       { status: 500 },
     )
