@@ -6,12 +6,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const { playerId, playerName, mealOnly = false, isGuest = false } = await request.json()
 
     // Validate input
-    if (!isGuest && !playerId) {
+    if (!mealOnly && !isGuest && !playerId) {
       return NextResponse.json({ error: "Se requiere seleccionar un jugador" }, { status: 400 })
     }
 
-    if (isGuest && !playerName) {
-      return NextResponse.json({ error: "Se requiere el nombre del invitado" }, { status: 400 })
+    if ((isGuest || mealOnly) && !playerName) {
+      return NextResponse.json({ error: "Se requiere el nombre del jugador o invitado" }, { status: 400 })
     }
 
     // Check if match exists
@@ -25,8 +25,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     let finalPlayerName = playerName
 
-    // If not a guest, get player info from database
-    if (!isGuest && playerId) {
+    // If not a guest or meal-only, get player info from database
+    if (!isGuest && !mealOnly && playerId) {
       const player = await sql`
         SELECT * FROM "Player" WHERE id = ${playerId}
       `
@@ -48,16 +48,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
         return NextResponse.json({ error: "Este jugador ya está inscrito en el partido" }, { status: 400 })
       }
     } else {
-      // For guests, check if the name is already used
+      // For guests and meal-only, check if the name is already used
       const existingGuestSignup = await sql`
         SELECT * FROM "Signup" 
         WHERE "matchId" = ${params.id} 
         AND "playerName" = ${finalPlayerName}
-        AND "is_guest" = true
+        AND "mealOnly" = ${mealOnly}
       `
 
       if (existingGuestSignup.length > 0) {
-        return NextResponse.json({ error: "Ya hay un invitado con este nombre en el partido" }, { status: 400 })
+        return NextResponse.json({ error: "Ya hay una persona con este nombre en la lista" }, { status: 400 })
       }
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     // Create signup - meal-only signups always have hasMeal=true
     const signup = await sql`
       INSERT INTO "Signup" (id, "matchId", "playerName", "player_id", "is_guest", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order")
-      VALUES (${signupId}, ${params.id}, ${finalPlayerName}, ${isGuest ? null : playerId}, ${isGuest}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${[]}, NOW(), ${nextOrder})
+      VALUES (${signupId}, ${params.id}, ${finalPlayerName}, ${!isGuest && !mealOnly ? playerId : null}, ${isGuest || mealOnly}, ${isWaiting}, ${mealOnly ? true : false}, ${mealOnly}, ${[]}, NOW(), ${nextOrder})
       RETURNING id, "matchId", "playerName", "player_id", "is_guest", "isWaiting", "hasMeal", "mealOnly", "positions", "signupTime", "order"
     `
 

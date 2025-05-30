@@ -21,6 +21,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface Player {
   id: string
@@ -53,9 +55,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null)
   const [selectedPlayerName, setSelectedPlayerName] = useState("")
   const [isSelectedPlayerGuest, setIsSelectedPlayerGuest] = useState(false)
-  const [selectedMealPlayerId, setSelectedMealPlayerId] = useState<string | null>(null)
   const [selectedMealPlayerName, setSelectedMealPlayerName] = useState("")
-  const [isSelectedMealPlayerGuest, setIsSelectedMealPlayerGuest] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningUp, setIsSigningUp] = useState(false)
   const [isSigningUpMealOnly, setIsSigningUpMealOnly] = useState(false)
@@ -111,12 +111,6 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
     setIsSelectedPlayerGuest(isGuest)
   }
 
-  const handleMealPlayerSelect = (playerId: string | null, playerName: string, isGuest: boolean) => {
-    setSelectedMealPlayerId(playerId)
-    setSelectedMealPlayerName(playerName)
-    setIsSelectedMealPlayerGuest(isGuest)
-  }
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedPlayerName.trim()) return
@@ -167,10 +161,9 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          playerId: selectedMealPlayerId,
           playerName: selectedMealPlayerName,
           mealOnly: true,
-          isGuest: isSelectedMealPlayerGuest,
+          isGuest: true, // All meal-only signups are treated as guests
         }),
       })
 
@@ -180,9 +173,7 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
       }
 
       await fetchMatch()
-      setSelectedMealPlayerId(null)
       setSelectedMealPlayerName("")
-      setIsSelectedMealPlayerGuest(false)
       setNewSignup(true)
       setShowShareDialog(true)
     } catch (error: any) {
@@ -660,13 +651,24 @@ export default function MatchDetailPage({ params }: { params: { id: string } }) 
                   Anotarme Solo para Comer
                 </h3>
 
+                <p className="text-sm text-muted-foreground mt-2">
+                  Ingresa tu nombre para anotarte solo para el asado, sin jugar el partido.
+                </p>
+
                 <form onSubmit={handleMealOnlySignup} className="space-y-4">
-                  <PlayerSelector
-                    onPlayerSelect={handleMealPlayerSelect}
-                    disabled={isSigningUpMealOnly}
-                    label="Seleccionar Persona"
-                    placeholder="Selecciona una persona o agrega un invitado"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="mealOnlyName" className="text-green-700">
+                      Nombre
+                    </Label>
+                    <Input
+                      id="mealOnlyName"
+                      placeholder="Ingresa tu nombre"
+                      value={selectedMealPlayerName}
+                      onChange={(e) => setSelectedMealPlayerName(e.target.value)}
+                      disabled={isSigningUpMealOnly}
+                      className="border-green-200 focus-visible:ring-green-500"
+                    />
+                  </div>
                   <Button
                     type="submit"
                     disabled={isSigningUpMealOnly || !selectedMealPlayerName.trim()}
