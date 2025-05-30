@@ -140,10 +140,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
     // Create the prompt with all players
     const prompt = `
 
-Eres un seleccionador de equipos de futbol/soccer, tienes un criterio de confeccion de equipos de manera balanceada,
-tu objetivo es distribuir jugadores en 2 equipos de manera balanceada, considerando las habilidades, fortalezas, debeilidades y posiciones dentro del campo de juego de cada uno de la lista
-de manera que el partido sea lo mas equilibrado posible.
+Eres un seleccionador de equipos de futbol/soccer profesional. Tu objetivo es distribuir jugadores en 2 equipos de manera balanceada, RESPETANDO ESTRICTAMENTE las posiciones naturales de cada jugador.
 
+REGLAS FUNDAMENTALES DE POSICIONES:
+1. NUNCA asignes un jugador a una posición que no sea su posición principal o secundaria
+2. Un jugador de "mediocampo" NUNCA puede ser asignado como "arquero"
+3. Un jugador de "delantero" NUNCA puede ser asignado como "arquero"
+4. Un jugador de "defensor" NUNCA puede ser asignado como "arquero"
+5. Solo jugadores con posición "arquero" pueden ser asignados como "arquero"
+6. SIEMPRE prioriza la posición principal del jugador
+7. Solo usa la posición secundaria si es absolutamente necesario para el balance
 
 INSTRUCCIONES IMPORTANTES:
 - Es un partido de soccer
@@ -152,6 +158,7 @@ INSTRUCCIONES IMPORTANTES:
 - Equipo 2 debe tener exactamente ${team2Size} jugadores
 - NO puedes omitir ningún jugador
 - Cada jugador debe estar en exactamente un equipo
+- RESPETA ESTRICTAMENTE las posiciones de cada jugador
 
 FORMACIONES APROPIADAS:
 - Para Equipo 1 (${team1Size} jugadores): ${team1Formations.join(", ")}
@@ -166,8 +173,8 @@ ${playersData
     (player, index) => `
 ${index + 1}. ID: ${player.playerId}
    - Nombre: ${player.playerName} ${player.isGuest ? "(Invitado)" : ""}
-   - Posición Principal: ${player.primaryPosition}
-   - Posición Secundaria: ${player.secondaryPosition || "Ninguna"}
+   - Posición Principal: ${player.primaryPosition} ← DEBE SER RESPETADA
+   - Posición Secundaria: ${player.secondaryPosition || "Ninguna"} ← Solo usar si es necesario
    - Velocidad: ${player.speed}/10
    - Habilidad: ${player.control}/10
    - Físico: ${player.physicalCondition}/10
@@ -176,23 +183,35 @@ ${index + 1}. ID: ${player.playerId}
   )
   .join("")}
 
-OBJETIVO: Crear dos equipos equilibrados usando TODOS los jugadores listados arriba.
+OBJETIVO: Crear dos equipos equilibrados usando TODOS los jugadores listados arriba, RESPETANDO sus posiciones naturales.
 
-CRITERIOS DE EQUILIBRIO:
-1. Distribución equitativa de habilidades (velocidad, control, físico, actitud)
-2. Balance de posiciones apropiado para el número de jugadores
-3. Mezcla de jugadores experimentados e invitados
-4. Formaciones tácticas realistas para el número de jugadores disponibles
-5. Solo 1 arquero por equipo
+CRITERIOS DE EQUILIBRIO (en orden de prioridad):
+1. RESPETAR las posiciones principales de cada jugador (OBLIGATORIO)
+2. Distribución equitativa de habilidades (velocidad, control, físico, actitud)
+3. Balance de posiciones apropiado para el número de jugadores
+4. Mezcla de jugadores experimentados e invitados
+5. Formaciones tácticas realistas para el número de jugadores disponibles
 
-REGLAS DE FORMACIÓN:
-- Si hay 1 arquero disponible, debe ir en el equipo más grande
-- Si hay 2+ arqueros, distribuir entre equipos
-- Adaptar defensores, mediocampistas y delanteros según el tamaño del equipo
-- Siempre pondera la Posicion Primaria, luego la secundaria, unicamente cambiar posicion de un jugador si no es posible balancear los equipos
-- Para equipos pequeños (3-5 jugadores): formaciones simples como 1-1-1, 1-2-1
-- Para equipos medianos (6-8 jugadores): formaciones como 1-2-3, 1-3-2
-- Para equipos grandes (9+ jugadores): formaciones tradicionales como 1-4-4-1
+REGLAS DE ASIGNACIÓN DE POSICIONES:
+- Si un jugador tiene posición principal "arquero" → assignedPosition: "arquero"
+- Si un jugador tiene posición principal "defensor" → assignedPosition: "defensor"
+- Si un jugador tiene posición principal "mediocampo" → assignedPosition: "mediocampo"
+- Si un jugador tiene posición principal "delantero" → assignedPosition: "delantero"
+- NUNCA cambies la posición principal de un jugador
+- Solo usa posición secundaria si no hay suficientes jugadores para una posición específica
+
+DISTRIBUCIÓN DE ARQUEROS:
+- Si hay 1 arquero: asignarlo al equipo más grande
+- Si hay 2+ arqueros: distribuir entre equipos
+- Si NO hay arqueros: el equipo más grande juega sin arquero dedicado, usar un defensor
+
+VALIDACIÓN OBLIGATORIA:
+Antes de generar la respuesta, verifica que:
+- Ningún jugador de "mediocampo" esté asignado como "arquero"
+- Ningún jugador de "delantero" esté asignado como "arquero"  
+- Ningún jugador de "defensor" esté asignado como "arquero"
+- Solo jugadores con posición "arquero" estén asignados como "arquero"
+- Cada jugador mantenga su posición principal o secundaria
 
 FORMATO DE RESPUESTA (JSON válido):
 {
@@ -201,8 +220,8 @@ FORMATO DE RESPUESTA (JSON válido):
       {
         "playerId": "player_X",
         "playerName": "Nombre exacto del jugador",
-        "assignedPosition": "arquero|defensor|mediocampo|delantero",
-        "reasoning": "Razón específica para esta asignación"
+        "assignedPosition": "DEBE SER LA POSICIÓN PRINCIPAL O SECUNDARIA DEL JUGADOR",
+        "reasoning": "Explicar por qué se asignó esta posición respetando su posición natural"
       }
     ],
     "formation": "Formación apropiada para ${team1Size} jugadores (ej: ${team1Formations[0]})",
@@ -214,8 +233,8 @@ FORMATO DE RESPUESTA (JSON válido):
       {
         "playerId": "player_Y",
         "playerName": "Nombre exacto del jugador", 
-        "assignedPosition": "arquero|defensor|mediocampo|delantero",
-        "reasoning": "Razón específica para esta asignación"
+        "assignedPosition": "DEBE SER LA POSICIÓN PRINCIPAL O SECUNDARIA DEL JUGADOR",
+        "reasoning": "Explicar por qué se asignó esta posición respetando su posición natural"
       }
     ],
     "formation": "Formación apropiada para ${team2Size} jugadores (ej: ${team2Formations[0]})",
@@ -224,25 +243,29 @@ FORMATO DE RESPUESTA (JSON válido):
   },
   "balanceAnalysis": {
     "overallBalance": 8,
-    "explanation": "Análisis detallado del equilibrio entre equipos considerando el número limitado de jugadores",
+    "explanation": "Análisis detallado del equilibrio entre equipos, explicando cómo se respetaron las posiciones naturales",
     "recommendations": ["Recomendación táctica 1", "Recomendación táctica 2"]
   },
   "teamBuildingStrategy": {
-    "approach": "Descripción del enfoque estratégico para equipos de ${team1Size} vs ${team2Size} jugadores",
+    "approach": "Descripción del enfoque estratégico respetando las posiciones naturales de los jugadores",
     "keyDecisions": ["Decisión clave 1", "Decisión clave 2", "Decisión clave 3"],
-    "balancingFactors": ["Factor de equilibrio 1", "Factor de equilibrio 2"],
-    "expectedOutcome": "Predicción del resultado considerando el tamaño de los equipos",
-    "coachingTips": ["Consejo para equipos pequeños 1", "Consejo para equipos pequeños 2"]
+    "balancingFactors": ["Respeto a posiciones naturales", "Factor de equilibrio 2"],
+    "expectedOutcome": "Predicción del resultado considerando las posiciones respetadas",
+    "coachingTips": ["Consejo basado en posiciones naturales 1", "Consejo basado en posiciones naturales 2"]
   }
 }
 
-VERIFICACIÓN FINAL:
+VERIFICACIÓN FINAL OBLIGATORIA:
 - Equipo 1: ${team1Size} jugadores con formación apropiada
 - Equipo 2: ${team2Size} jugadores con formación apropiada
 - Total: ${totalPlayers} jugadores (todos incluidos)
+- TODOS los jugadores mantienen su posición principal o secundaria
+- NINGÚN jugador de campo asignado como arquero
 - Las formaciones deben sumar exactamente el número de jugadores en cada equipo
 
 Usa EXACTAMENTE los IDs proporcionados (${playersData.map((p) => p.playerId).join(", ")}).
+
+RECUERDA: Es FUNDAMENTAL respetar las posiciones naturales de cada jugador. Un mediocampista NUNCA puede ser arquero.
 `
 
     console.log("🤖 Enviando prompt a IA con formaciones apropiadas...")
